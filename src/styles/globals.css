@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+
+  html,
+  body {
+    @apply m-0 p-0;
+  }
+
+  body {
+    @apply bg-canvas text-ink2 antialiased font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+
+  button {
+    font-family: inherit;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  ::selection {
+    @apply bg-brand-soft;
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  [tabindex]:focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-brand rounded-sm;
+  }
+}
+
+@layer components {
+  .skeleton {
+    background: linear-gradient(90deg, #edf0f4 25%, #f6f8fa 37%, #edf0f4 63%);
+    background-size: 800px 100%;
+    @apply animate-shimmer;
+  }
+}
