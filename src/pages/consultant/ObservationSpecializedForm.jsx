@@ -6,7 +6,7 @@ import ObservationSuccessModal from '../../components/ObservationSuccessModal'
 import ObservationTypeBadge from '../../components/ObservationTypeBadge'
 import { useToast } from '../../hooks/useToast'
 import { createObservation } from '../../services/observationService'
-import { uploadObservationEvidence } from '../../services/evidenceService'
+import { prepareEvidenceFile, uploadObservationEvidence } from '../../services/evidenceService'
 
 const CONFIG = {
   gemba: {
@@ -36,6 +36,7 @@ const CONFIG = {
 }
 
 function getApiErrorMessage(error) {
+  if (error?.userMessage) return error.userMessage
   const detail = error?.response?.data?.detail
   if (typeof detail === 'string') return detail
   if (Array.isArray(detail)) return detail.map((x) => x?.msg || x).filter(Boolean).join(', ') || 'Unable to create observation.'
@@ -83,21 +84,17 @@ export default function ObservationSpecializedForm({ kind }) {
     return Object.keys(next).length === 0
   }
 
-  function handleFiles(e) {
+  async function handleFiles(e) {
     const selected = Array.from(e.target.files || [])
-    const allowed = ['image/jpeg', 'image/png', 'image/webp']
-    if (selected.some((file) => !allowed.includes(file.type))) {
-      showToast('Only JPG, PNG and WEBP images are allowed.', 'error')
-      e.target.value = ''
-      return
-    }
-    if (selected.some((file) => file.size > 10 * 1024 * 1024)) {
-      showToast('Each image must not exceed 10 MB.', 'error')
-      e.target.value = ''
-      return
-    }
-    setFiles((current) => [...current, ...selected])
     e.target.value = ''
+    if (!selected.length) return
+
+    try {
+      const prepared = await Promise.all(selected.map((file) => prepareEvidenceFile(file)))
+      setFiles((current) => [...current, ...prepared])
+    } catch (error) {
+      showToast(error?.message || 'Unable to prepare this image. Please try another photo.', 'error')
+    }
   }
 
   async function handleSubmit(e) {
@@ -117,12 +114,23 @@ export default function ObservationSpecializedForm({ kind }) {
         details: values,
       })
 
+      let evidenceUploadFailed = false
       if (files.length && observation?.id) {
         setIsUploading(true)
-        for (const file of files) await uploadObservationEvidence(observation.id, file)
+        try {
+          for (const file of files) await uploadObservationEvidence(observation.id, file)
+        } catch (uploadError) {
+          evidenceUploadFailed = true
+          console.error('Observation saved, but evidence upload failed:', uploadError)
+          showToast(
+            getApiErrorMessage(uploadError) ||
+              'Observation saved, but a photo could not be uploaded. Open the observation and retry the photo.',
+            'error'
+          )
+        }
       }
 
-      showToast('Observation added successfully.')
+      if (!evidenceUploadFailed) showToast('Observation added successfully.')
       setSuccess({ number: observation?.observation_number || 'Observation saved' })
     } catch (error) {
       console.error(error)
@@ -189,19 +197,18 @@ export default function ObservationSpecializedForm({ kind }) {
 
         <div className="mb-5">
           <label className="mb-1.5 block text-sm font-medium text-ink2-secondary">Evidence / Photos</label>
-          <div className="rounded-lg border border-dashed border-line-strong bg-canvas px-4 py-5 text-center">
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <label htmlFor="special-evidence" className="cursor-pointer rounded-md border border-line-strong bg-surface px-4 py-2.5 text-sm font-semibold text-ink2 hover:bg-canvas">
-                + Add Photos
-              </label>
-              <input id="special-evidence" type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleFiles} disabled={isSubmitting || isUploading} />
-
-              <label htmlFor="special-evidence-camera" className={`cursor-pointer rounded-md border border-brand/40 bg-brand/5 px-4 py-2.5 text-sm font-semibold text-brand hover:bg-brand/10 ${isSubmitting || isUploading ? 'pointer-events-none opacity-50' : ''}`}>
+          <div className="rounded-lg border border-dashed border-line-strong bg-canvas p-4">
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <label htmlFor="special-evidence-camera" className="flex min-h-12 flex-1 cursor-pointer items-center justify-center rounded-md border border-line-strong bg-surface px-4 py-3 text-center text-sm font-semibold text-ink2 hover:bg-canvas">
                 Take Photo
+                <input id="special-evidence-camera" type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFiles} disabled={isSubmitting || isUploading} />
               </label>
-              <input id="special-evidence-camera" type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFiles} disabled={isSubmitting || isUploading} />
+              <label htmlFor="special-evidence-gallery" className="flex min-h-12 flex-1 cursor-pointer items-center justify-center rounded-md bg-brand px-4 py-3 text-center text-sm font-semibold text-white hover:bg-brand-hover">
+                Choose from Gallery
+                <input id="special-evidence-gallery" type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} disabled={isSubmitting || isUploading} />
+              </label>
             </div>
-            <p className="mt-2 text-xs text-ink2-muted">Choose existing photos or use your device camera. JPG, PNG or WEBP · Maximum 10 MB each.</p>
+            <p className="mt-2 text-xs text-ink2-muted">Photos are optimized on your device before upload. Supported output: JPG, PNG or WEBP; images are limited to 8 MB after optimization.</p>
           </div>
           {files.length > 0 && <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">{files.map((file, index) => <div key={`${file.name}-${file.size}-${index}`} className="overflow-hidden rounded-lg border border-line bg-surface"><div className="aspect-square bg-canvas">{previews[index] && <img src={previews[index]} alt={file.name} className="h-full w-full object-cover" />}</div><div className="flex items-center justify-between gap-2 border-t border-line px-2 py-2"><span className="truncate text-xs text-ink2">{file.name}</span><button type="button" onClick={() => setFiles((current) => current.filter((_, i) => i !== index))} className="text-xs font-semibold text-danger">Remove</button></div></div>)}</div>}
         </div>

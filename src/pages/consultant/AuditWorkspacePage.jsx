@@ -22,6 +22,7 @@ import {
 import {
   fetchObservationEvidence,
   fetchObservationEvidenceFile,
+  prepareEvidenceFile,
   uploadObservationEvidence,
   deleteObservationEvidence,
 } from '../../services/evidenceService'
@@ -581,68 +582,22 @@ export default function AuditWorkspacePage() {
     observationId,
     event
   ) {
-    const files = Array.from(
-      event.target.files || []
-    )
+    const selectedFiles = Array.from(event.target.files || [])
+    event.target.value = ''
+    if (!selectedFiles.length) return
 
-    if (files.length === 0) {
-      return
-    }
-
-    const allowedTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-    ]
-
-    const invalidFile =
-      files.find(
-        (file) =>
-          !allowedTypes.includes(
-            file.type
-          )
-      )
-
-    if (invalidFile) {
-      showToast(
-        'Only JPG, PNG and WEBP images are allowed.',
-        'error'
-      )
-
-      event.target.value = ''
-      return
-    }
-
-    const oversizedFile =
-      files.find(
-        (file) =>
-          file.size >
-          10 * 1024 * 1024
-      )
-
-    if (oversizedFile) {
-      showToast(
-        'Each image must not exceed 10 MB.',
-        'error'
-      )
-
-      event.target.value = ''
-      return
-    }
-
-    setUploadingEvidence(
-      (current) => ({
-        ...current,
-        [observationId]: true,
-      })
-    )
+    setUploadingEvidence((current) => ({
+      ...current,
+      [observationId]: true,
+    }))
 
     try {
+      const files = await Promise.all(
+        selectedFiles.map((file) => prepareEvidenceFile(file))
+      )
+
       for (const file of files) {
-        await uploadObservationEvidence(
-          observationId,
-          file
-        )
+        await uploadObservationEvidence(observationId, file)
       }
 
       showToast(
@@ -651,29 +606,21 @@ export default function AuditWorkspacePage() {
           : 'Evidence photos uploaded successfully.'
       )
 
-      await loadObservationEvidence(
-        observationId
-      )
+      await loadObservationEvidence(observationId)
     } catch (err) {
-      console.error(
-        'Failed to upload evidence:',
-        err
-      )
-
+      console.error('Failed to upload evidence:', err)
       showToast(
-        err.response?.data?.detail ||
-          'Unable to upload evidence.',
+        err?.userMessage ||
+          err?.message ||
+          err?.response?.data?.detail ||
+          'Unable to upload evidence. Check your connection and try again.',
         'error'
       )
     } finally {
-      setUploadingEvidence(
-        (current) => ({
-          ...current,
-          [observationId]: false,
-        })
-      )
-
-      event.target.value = ''
+      setUploadingEvidence((current) => ({
+        ...current,
+        [observationId]: false,
+      }))
     }
   }
 
@@ -1547,48 +1494,33 @@ export default function AuditWorkspacePage() {
 
 
                         {!isSubmitted && (
-                          <div className="flex flex-wrap gap-2">
-                            <label
-                              className={`cursor-pointer rounded-md border border-line-strong px-3 py-2 text-xs font-semibold text-ink2 transition-colors hover:bg-surface ${
-                                uploadingEvidence[observation.id]
-                                  ? 'pointer-events-none opacity-50'
-                                  : ''
-                              }`}
-                            >
-                              {uploadingEvidence[observation.id]
-                                ? 'Uploading…'
-                                : '+ Add Photo'}
-                              <input
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp"
-                                multiple
-                                className="hidden"
-                                disabled={uploadingEvidence[observation.id]}
-                                onChange={(event) =>
-                                  handleEvidenceUpload(observation.id, event)
-                                }
-                              />
-                            </label>
-
-                            <label
-                              className={`cursor-pointer rounded-md border border-brand/40 bg-brand/5 px-3 py-2 text-xs font-semibold text-brand transition-colors hover:bg-brand/10 ${
-                                uploadingEvidence[observation.id]
-                                  ? 'pointer-events-none opacity-50'
-                                  : ''
-                              }`}
-                            >
-                              Take Photo
-                              <input
-                                type="file"
-                                accept="image/*"
-                                capture="environment"
-                                className="hidden"
-                                disabled={uploadingEvidence[observation.id]}
-                                onChange={(event) =>
-                                  handleEvidenceUpload(observation.id, event)
-                                }
-                              />
-                            </label>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {uploadingEvidence[observation.id] ? (
+                              <span className="text-xs font-semibold text-ink2-secondary">Preparing / uploading…</span>
+                            ) : (
+                              <>
+                                <label className="cursor-pointer rounded-md border border-line-strong px-3 py-2 text-xs font-semibold text-ink2 transition-colors hover:bg-surface">
+                                  Take Photo
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    capture="environment"
+                                    className="hidden"
+                                    onChange={(event) => handleEvidenceUpload(observation.id, event)}
+                                  />
+                                </label>
+                                <label className="cursor-pointer rounded-md border border-line-strong px-3 py-2 text-xs font-semibold text-ink2 transition-colors hover:bg-surface">
+                                  Choose Photos
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="hidden"
+                                    onChange={(event) => handleEvidenceUpload(observation.id, event)}
+                                  />
+                                </label>
+                              </>
+                            )}
                           </div>
                         )}
 

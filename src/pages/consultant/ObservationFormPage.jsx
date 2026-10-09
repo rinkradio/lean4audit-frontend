@@ -10,6 +10,7 @@ import {
 } from '../../services/observationService'
 
 import {
+  prepareEvidenceFile,
   uploadObservationEvidence,
 } from '../../services/evidenceService'
 
@@ -24,6 +25,7 @@ function getApiErrorMessage(
   error,
   fallback = 'Unable to create observation. Please try again.'
 ) {
+  if (error?.userMessage) return error.userMessage
   const detail = error?.response?.data?.detail
 
   if (typeof detail === 'string') {
@@ -257,59 +259,21 @@ export default function ObservationFormPage() {
   // EVIDENCE FILE SELECTION
   // ---------------------------------------------------------
 
-  function handleEvidenceChange(e) {
-    const files = Array.from(
-      e.target.files || []
-    )
-
-    if (files.length === 0) {
-      return
-    }
-
-    const allowedTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-    ]
-
-    const invalidFile = files.find(
-      (file) =>
-        !allowedTypes.includes(file.type)
-    )
-
-    if (invalidFile) {
-      setEvidenceError(
-        'Only JPG, PNG and WEBP images are allowed.'
-      )
-
-      e.target.value = ''
-
-      return
-    }
-
-    const oversizedFile = files.find(
-      (file) =>
-        file.size > 10 * 1024 * 1024
-    )
-
-    if (oversizedFile) {
-      setEvidenceError(
-        'Each image must not exceed 10 MB.'
-      )
-
-      e.target.value = ''
-
-      return
-    }
-
-    setEvidenceError('')
-
-    setEvidenceFiles((current) => [
-      ...current,
-      ...files,
-    ])
-
+  async function handleEvidenceChange(e) {
+    const selectedFiles = Array.from(e.target.files || [])
     e.target.value = ''
+
+    if (!selectedFiles.length) return
+
+    try {
+      setEvidenceError('')
+      const preparedFiles = await Promise.all(
+        selectedFiles.map((file) => prepareEvidenceFile(file))
+      )
+      setEvidenceFiles((current) => [...current, ...preparedFiles])
+    } catch (error) {
+      setEvidenceError(error?.message || 'Unable to prepare this image. Please try another photo.')
+    }
   }
 
 
@@ -364,29 +328,34 @@ export default function ObservationFormPage() {
           }
         )
 
-      // -----------------------------------------------------
-      // UPLOAD SELECTED EVIDENCE
-      // -----------------------------------------------------
-
-      if (
-        evidenceFiles.length > 0 &&
-        observation?.id
-      ) {
+      // The observation is saved before its evidence. Keep the success
+      // state if a photo upload fails so the user does not submit a duplicate.
+      let evidenceUploadFailed = false
+      if (evidenceFiles.length > 0 && observation?.id) {
         setIsUploadingEvidence(true)
-
-        for (const file of evidenceFiles) {
-          await uploadObservationEvidence(
-            observation.id,
-            file
+        try {
+          for (const file of evidenceFiles) {
+            await uploadObservationEvidence(observation.id, file)
+          }
+        } catch (uploadError) {
+          evidenceUploadFailed = true
+          console.error('Observation saved, but evidence upload failed:', uploadError)
+          showToast(
+            uploadError?.userMessage ||
+              uploadError?.response?.data?.detail ||
+              'Observation saved, but a photo could not be uploaded. Open the observation and retry the photo.',
+            'error'
           )
         }
       }
 
-      showToast(
-        evidenceFiles.length > 0
-          ? 'Observation and evidence added successfully.'
-          : 'Observation added successfully.'
-      )
+      if (!evidenceUploadFailed) {
+        showToast(
+          evidenceFiles.length > 0
+            ? 'Observation and evidence added successfully.'
+            : 'Observation added successfully.'
+        )
+      }
 
       setSuccessObservation({
         id: observation?.id || null,
@@ -397,15 +366,8 @@ export default function ObservationFormPage() {
       })
 
     } catch (err) {
-      console.error(
-        'Failed to create observation:',
-        err
-      )
-
-      showToast(
-        getApiErrorMessage(err),
-        'error'
-      )
+      console.error('Failed to create observation:', err)
+      showToast(getApiErrorMessage(err), 'error')
 
     } finally {
       setIsUploadingEvidence(false)
@@ -690,36 +652,14 @@ export default function ObservationFormPage() {
 
           <div className="rounded-lg border border-dashed border-line-strong bg-canvas p-4">
 
-            <div className="flex flex-col items-center gap-3 px-4 py-5 text-center">
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <label
-                  htmlFor="observation-evidence"
-                  className="cursor-pointer rounded-md border border-line-strong bg-surface px-4 py-2.5 text-sm font-semibold text-ink2 transition-colors hover:bg-canvas"
-                >
-                  + Add Photos
-                </label>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <label
+                htmlFor="observation-evidence-camera"
+                className="flex min-h-12 flex-1 cursor-pointer items-center justify-center rounded-md border border-line-strong bg-surface px-4 py-3 text-center text-sm font-semibold text-ink2 transition-colors hover:bg-canvas"
+              >
+                <span>Take Photo</span>
                 <input
-                  id="observation-evidence"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  multiple
-                  className="hidden"
-                  disabled={isSubmitting || isUploadingEvidence}
-                  onChange={handleEvidenceChange}
-                />
-
-                <label
-                  htmlFor="observation-camera"
-                  className={`cursor-pointer rounded-md border border-brand/40 bg-brand/5 px-4 py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-brand/10 ${
-                    isSubmitting || isUploadingEvidence
-                      ? 'pointer-events-none opacity-50'
-                      : ''
-                  }`}
-                >
-                  Take Photo
-                </label>
-                <input
-                  id="observation-camera"
+                  id="observation-evidence-camera"
                   type="file"
                   accept="image/*"
                   capture="environment"
@@ -727,11 +667,26 @@ export default function ObservationFormPage() {
                   disabled={isSubmitting || isUploadingEvidence}
                   onChange={handleEvidenceChange}
                 />
-              </div>
-              <div className="text-xs text-ink2-muted">
-                Choose existing photos or use your device camera. JPG, PNG or WEBP · Maximum 10 MB each.
-              </div>
+              </label>
+              <label
+                htmlFor="observation-evidence-gallery"
+                className="flex min-h-12 flex-1 cursor-pointer items-center justify-center rounded-md bg-brand px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-brand-hover"
+              >
+                <span>Choose from Gallery</span>
+                <input
+                  id="observation-evidence-gallery"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  disabled={isSubmitting || isUploadingEvidence}
+                  onChange={handleEvidenceChange}
+                />
+              </label>
             </div>
+            <p className="mt-2 text-xs text-ink2-muted">
+              Photos are optimized on your device before upload. Supported output: JPG, PNG or WEBP; images are limited to 8 MB after optimization.
+            </p>
 
 
             {evidenceError && (
