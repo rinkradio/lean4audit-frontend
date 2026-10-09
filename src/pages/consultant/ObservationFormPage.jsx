@@ -690,35 +690,48 @@ export default function ObservationFormPage() {
 
           <div className="rounded-lg border border-dashed border-line-strong bg-canvas p-4">
 
-            <label
-              htmlFor="observation-evidence"
-              className="flex cursor-pointer flex-col items-center justify-center rounded-md px-4 py-5 text-center transition-colors hover:bg-surface"
-            >
+            <div className="flex flex-col items-center gap-3 px-4 py-5 text-center">
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <label
+                  htmlFor="observation-evidence"
+                  className="cursor-pointer rounded-md border border-line-strong bg-surface px-4 py-2.5 text-sm font-semibold text-ink2 transition-colors hover:bg-canvas"
+                >
+                  + Add Photos
+                </label>
+                <input
+                  id="observation-evidence"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  className="hidden"
+                  disabled={isSubmitting || isUploadingEvidence}
+                  onChange={handleEvidenceChange}
+                />
 
-              <div className="text-sm font-semibold text-ink2">
-                + Add Photos
+                <label
+                  htmlFor="observation-camera"
+                  className={`cursor-pointer rounded-md border border-brand/40 bg-brand/5 px-4 py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-brand/10 ${
+                    isSubmitting || isUploadingEvidence
+                      ? 'pointer-events-none opacity-50'
+                      : ''
+                  }`}
+                >
+                  Take Photo
+                </label>
+                <input
+                  id="observation-camera"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  disabled={isSubmitting || isUploadingEvidence}
+                  onChange={handleEvidenceChange}
+                />
               </div>
-
-              <div className="mt-1 text-xs text-ink2-muted">
-                JPG, PNG or WEBP · Maximum 10 MB each
+              <div className="text-xs text-ink2-muted">
+                Choose existing photos or use your device camera. JPG, PNG or WEBP · Maximum 10 MB each.
               </div>
-
-              <input
-                id="observation-evidence"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                className="hidden"
-                disabled={
-                  isSubmitting ||
-                  isUploadingEvidence
-                }
-                onChange={
-                  handleEvidenceChange
-                }
-              />
-
-            </label>
+            </div>
 
 
             {evidenceError && (

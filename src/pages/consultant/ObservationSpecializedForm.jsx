@@ -189,11 +189,20 @@ export default function ObservationSpecializedForm({ kind }) {
 
         <div className="mb-5">
           <label className="mb-1.5 block text-sm font-medium text-ink2-secondary">Evidence / Photos</label>
-          <label htmlFor="special-evidence" className="flex cursor-pointer flex-col items-center rounded-lg border border-dashed border-line-strong bg-canvas px-4 py-5 text-center hover:bg-surface">
-            <span className="text-sm font-semibold text-ink2">+ Add Photos</span>
-            <span className="mt-1 text-xs text-ink2-muted">JPG, PNG or WEBP · Maximum 10 MB each</span>
-            <input id="special-evidence" type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleFiles} disabled={isSubmitting || isUploading} />
-          </label>
+          <div className="rounded-lg border border-dashed border-line-strong bg-canvas px-4 py-5 text-center">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <label htmlFor="special-evidence" className="cursor-pointer rounded-md border border-line-strong bg-surface px-4 py-2.5 text-sm font-semibold text-ink2 hover:bg-canvas">
+                + Add Photos
+              </label>
+              <input id="special-evidence" type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handleFiles} disabled={isSubmitting || isUploading} />
+
+              <label htmlFor="special-evidence-camera" className={`cursor-pointer rounded-md border border-brand/40 bg-brand/5 px-4 py-2.5 text-sm font-semibold text-brand hover:bg-brand/10 ${isSubmitting || isUploading ? 'pointer-events-none opacity-50' : ''}`}>
+                Take Photo
+              </label>
+              <input id="special-evidence-camera" type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFiles} disabled={isSubmitting || isUploading} />
+            </div>
+            <p className="mt-2 text-xs text-ink2-muted">Choose existing photos or use your device camera. JPG, PNG or WEBP · Maximum 10 MB each.</p>
+          </div>
           {files.length > 0 && <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">{files.map((file, index) => <div key={`${file.name}-${file.size}-${index}`} className="overflow-hidden rounded-lg border border-line bg-surface"><div className="aspect-square bg-canvas">{previews[index] && <img src={previews[index]} alt={file.name} className="h-full w-full object-cover" />}</div><div className="flex items-center justify-between gap-2 border-t border-line px-2 py-2"><span className="truncate text-xs text-ink2">{file.name}</span><button type="button" onClick={() => setFiles((current) => current.filter((_, i) => i !== index))} className="text-xs font-semibold text-danger">Remove</button></div></div>)}</div>}
         </div>
 

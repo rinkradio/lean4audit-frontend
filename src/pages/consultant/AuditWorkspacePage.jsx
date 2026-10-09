@@ -1547,41 +1547,49 @@ export default function AuditWorkspacePage() {
 
 
                         {!isSubmitted && (
-                          <label
-                            className={`cursor-pointer rounded-md border border-line-strong px-3 py-2 text-xs font-semibold text-ink2 transition-colors hover:bg-surface ${
-                              uploadingEvidence[
-                                observation.id
-                              ]
-                                ? 'pointer-events-none opacity-50'
-                                : ''
-                            }`}
-                          >
+                          <div className="flex flex-wrap gap-2">
+                            <label
+                              className={`cursor-pointer rounded-md border border-line-strong px-3 py-2 text-xs font-semibold text-ink2 transition-colors hover:bg-surface ${
+                                uploadingEvidence[observation.id]
+                                  ? 'pointer-events-none opacity-50'
+                                  : ''
+                              }`}
+                            >
+                              {uploadingEvidence[observation.id]
+                                ? 'Uploading…'
+                                : '+ Add Photo'}
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                multiple
+                                className="hidden"
+                                disabled={uploadingEvidence[observation.id]}
+                                onChange={(event) =>
+                                  handleEvidenceUpload(observation.id, event)
+                                }
+                              />
+                            </label>
 
-                            {uploadingEvidence[
-                              observation.id
-                            ]
-                              ? 'Uploading…'
-                              : '+ Add Photo'}
-
-                            <input
-                              type="file"
-                              accept="image/jpeg,image/png,image/webp"
-                              multiple
-                              className="hidden"
-                              disabled={
-                                uploadingEvidence[
-                                  observation.id
-                                ]
-                              }
-                              onChange={(event) =>
-                                handleEvidenceUpload(
-                                  observation.id,
-                                  event
-                                )
-                              }
-                            />
-
-                          </label>
+                            <label
+                              className={`cursor-pointer rounded-md border border-brand/40 bg-brand/5 px-3 py-2 text-xs font-semibold text-brand transition-colors hover:bg-brand/10 ${
+                                uploadingEvidence[observation.id]
+                                  ? 'pointer-events-none opacity-50'
+                                  : ''
+                              }`}
+                            >
+                              Take Photo
+                              <input
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                className="hidden"
+                                disabled={uploadingEvidence[observation.id]}
+                                onChange={(event) =>
+                                  handleEvidenceUpload(observation.id, event)
+                                }
+                              />
+                            </label>
+                          </div>
                         )}
 
                       </div>
