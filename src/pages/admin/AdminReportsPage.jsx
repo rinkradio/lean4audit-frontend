@@ -1,296 +1,794 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-import { fetchPlants } from '../../services/plantService'
-import { fetchZones } from '../../services/zoneService'
-import { fetchAudits } from '../../services/auditService'
-import apiClient from '../../services/apiClient'
+import { useNavigate } from "react-router-dom";
+
+import { fetchPlants } from "../../services/plantService";
+import { fetchZones } from "../../services/zoneService";
+import { fetchAudits } from "../../services/auditService";
+import apiClient from "../../services/apiClient";
+
+// ============================================================
+// META
+// ============================================================
 
 const STATUS_META = {
   SUBMITTED: {
-    label: 'Submitted',
-    className: 'bg-success-soft text-success',
+    label: "Submitted",
+    tone: "success",
   },
+
   IN_PROGRESS: {
-    label: 'In Progress',
-    className: 'bg-warning-soft text-warning',
+    label: "In Progress",
+    tone: "warning",
   },
+
   DRAFT: {
-    label: 'Draft',
-    className: 'bg-ink2-muted/15 text-ink2-secondary',
+    label: "Draft",
+    tone: "neutral",
   },
-}
+};
 
 const SEVERITY_META = {
   HIGH: {
-    label: 'High',
-    className: 'bg-danger-soft text-danger',
+    label: "High",
+    tone: "danger",
   },
+
   MEDIUM: {
-    label: 'Medium',
-    className: 'bg-warning-soft text-warning',
+    label: "Medium",
+    tone: "warning",
   },
+
   LOW: {
-    label: 'Low',
-    className: 'bg-ink2-muted/15 text-ink2-secondary',
+    label: "Low",
+    tone: "neutral",
   },
-}
+};
+
+// ============================================================
+// HELPERS
+// ============================================================
 
 function formatDate(value) {
-  if (!value) return '—'
+  if (!value) {
+    return "—";
+  }
 
-  return new Date(value).toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
+  return new Date(value).toLocaleDateString(
+    "en-GB",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }
+  );
+}
+
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString(
+    "en-IN"
+  );
 }
 
 function StatusBadge({ status }) {
   const meta =
     STATUS_META[status] || {
-      label: status || 'Unknown',
-      className: 'bg-ink2-muted/15 text-ink2-secondary',
-    }
+      label: status || "Unknown",
+      tone: "neutral",
+    };
+
+  const toneClasses = {
+    success:
+      "border-[#cfe5d7] bg-[#eef8f1] text-[#397452]",
+
+    warning:
+      "border-[#eadfca] bg-[#faf6eb] text-[#927033]",
+
+    neutral:
+      "border-[#dce5e9] bg-[#f5f7f8] text-[#687a84]",
+  };
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${meta.className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-bold ${
+        toneClasses[meta.tone]
+      }`}
     >
+      {meta.tone === "success" && (
+        <span className="h-1.5 w-1.5 rounded-full bg-[#4d9a6d]" />
+      )}
+
+      {meta.tone === "warning" && (
+        <span className="h-1.5 w-1.5 rounded-full bg-[#b38b42]" />
+      )}
+
+      {meta.tone === "neutral" && (
+        <span className="h-1.5 w-1.5 rounded-full bg-[#89979e]" />
+      )}
+
       {meta.label}
     </span>
-  )
+  );
 }
+
+function SeverityBadge({
+  severity,
+  count,
+}) {
+  if (!count) {
+    return null;
+  }
+
+  const meta =
+    SEVERITY_META[severity];
+
+  const toneClasses = {
+    danger:
+      "border-[#efd4d4] bg-[#fdf1f1] text-[#a54d4d]",
+
+    warning:
+      "border-[#eadfca] bg-[#faf6eb] text-[#927033]",
+
+    neutral:
+      "border-[#dce5e9] bg-[#f5f7f8] text-[#687a84]",
+  };
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[9px] font-bold ${
+        toneClasses[meta.tone]
+      }`}
+    >
+      {meta.label}: {count}
+    </span>
+  );
+}
+
+// ============================================================
+// ICONS
+// ============================================================
+
+function ReportIcon({
+  size = 18,
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect
+        x="5"
+        y="3"
+        width="14"
+        height="18"
+        rx="2"
+      />
+
+      <path d="M9 7h6" />
+      <path d="M9 11h6" />
+      <path d="M9 15h3" />
+    </svg>
+  );
+}
+
+function CheckIcon({
+  size = 18,
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m5 12 4 4L19 6" />
+    </svg>
+  );
+}
+
+function ClockIcon({
+  size = 18,
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="8"
+      />
+
+      <path d="M12 8v5l3 2" />
+    </svg>
+  );
+}
+
+function DraftIcon({
+  size = 18,
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 20h16" />
+      <path d="M6 16l9-9 3 3-9 9H6z" />
+    </svg>
+  );
+}
+
+function ObservationIcon({
+  size = 18,
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="8"
+      />
+
+      <path d="M12 8v5" />
+      <path d="M12 16h.01" />
+    </svg>
+  );
+}
+
+function AlertIcon({
+  size = 18,
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 4l9 16H3L12 4z" />
+      <path d="M12 9v5" />
+      <path d="M12 17h.01" />
+    </svg>
+  );
+}
+
+function OpenIcon({
+  size = 18,
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="8"
+      />
+
+      <path d="M12 8v4" />
+      <path d="M12 16h.01" />
+    </svg>
+  );
+}
+
+function ClosedIcon({
+  size = 18,
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="8"
+      />
+
+      <path d="m8 12 3 3 5-6" />
+    </svg>
+  );
+}
+
+function RefreshIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 11a8 8 0 0 0-15-4" />
+      <path d="M5 3v4h4" />
+      <path d="M4 13a8 8 0 0 0 15 4" />
+      <path d="M19 21v-4h-4" />
+    </svg>
+  );
+}
+
+function FilterIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 6h16" />
+      <path d="M7 12h10" />
+      <path d="M10 18h4" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M5 12h14" />
+      <path d="m13 6 6 6-6 6" />
+    </svg>
+  );
+}
+
+function DownloadIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 4v11" />
+      <path d="m7 11 5 5 5-5" />
+      <path d="M5 20h14" />
+    </svg>
+  );
+}
+
+function BuildingIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 21V7l8-4 8 4v14" />
+      <path d="M8 10h1" />
+      <path d="M8 14h1" />
+      <path d="M8 18h1" />
+      <path d="M15 10h1" />
+      <path d="M15 14h1" />
+      <path d="M15 18h1" />
+    </svg>
+  );
+}
+
+// ============================================================
+// METRIC CARD
+// ============================================================
 
 function MetricCard({
   title,
   value,
   subtitle,
   icon,
+  iconClass,
   onClick,
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group rounded-2xl border border-line bg-surface p-4 text-left shadow-xs transition-all hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-sm sm:p-5"
+      className="group rounded-xl border border-[#dfe7ec] bg-white p-4 text-left shadow-[0_1px_2px_rgba(25,55,72,0.025)] transition-all hover:-translate-y-0.5 hover:border-[#c6d8e2] hover:shadow-[0_6px_20px_rgba(25,55,72,0.06)] sm:p-5"
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink2-muted">
+
+        <div className="min-w-0">
+
+          <p className="text-[9px] font-bold uppercase tracking-[0.13em] text-[#84949e]">
             {title}
           </p>
 
-          <p className="mt-2 text-2xl font-bold text-ink2 sm:text-3xl">
-            {value}
+          <p className="mt-2 text-[25px] font-bold tracking-[-0.035em] text-[#253d4c]">
+            {formatNumber(value)}
           </p>
 
-          <p className="mt-1 text-xs text-ink2-secondary">
+          <p className="mt-1 text-[10px] text-[#8998a1]">
             {subtitle}
           </p>
+
         </div>
 
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
+        <div
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconClass}`}
+        >
           {icon}
         </div>
+
       </div>
     </button>
-  )
+  );
 }
+
+// ============================================================
+// SECTION HEADER
+// ============================================================
 
 function SectionHeader({
   title,
   description,
+  action,
 }) {
   return (
-    <div className="mb-5">
-      <h2 className="text-base font-bold text-ink2 sm:text-lg">
-        {title}
-      </h2>
+    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 
-      {description && (
-        <p className="mt-1 text-xs text-ink2-secondary sm:text-sm">
-          {description}
-        </p>
-      )}
+      <div>
+
+        <h2 className="text-[13px] font-bold text-[#293f4e] sm:text-[14px]">
+          {title}
+        </h2>
+
+        {description && (
+          <p className="mt-1 text-[10px] leading-5 text-[#8998a1] sm:text-[11px]">
+            {description}
+          </p>
+        )}
+
+      </div>
+
+      {action}
+
     </div>
-  )
+  );
 }
 
-function EmptyState({ text }) {
+// ============================================================
+// EMPTY STATE
+// ============================================================
+
+function EmptyState({
+  icon,
+  text,
+}) {
   return (
-    <div className="rounded-xl border border-dashed border-line-strong px-5 py-10 text-center">
-      <p className="text-sm text-ink2-secondary">
+    <div className="flex min-h-[190px] flex-col items-center justify-center rounded-lg border border-dashed border-[#dce5e9] bg-[#fafcfd] px-5 text-center">
+
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[#eef4f7] text-[#52748a]">
+        {icon || (
+          <ObservationIcon />
+        )}
+      </div>
+
+      <p className="max-w-[360px] text-[11px] leading-5 text-[#84939c]">
         {text}
       </p>
+
     </div>
-  )
+  );
 }
 
+// ============================================================
+// MAIN
+// ============================================================
+
 export default function AdminReportsPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-  const [plants, setPlants] = useState([])
-  const [zones, setZones] = useState([])
-  const [audits, setAudits] = useState([])
+  const [plants, setPlants] =
+    useState([]);
 
-  const [selectedPlant, setSelectedPlant] = useState('')
-  const [selectedZone, setSelectedZone] = useState('')
-  const [selectedStatus, setSelectedStatus] = useState('')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  const [zones, setZones] =
+    useState([]);
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [exporting, setExporting] = useState(null)
+  const [audits, setAudits] =
+    useState([]);
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    setError('')
+  const [
+    selectedPlant,
+    setSelectedPlant,
+  ] = useState("");
 
-    try {
-      const [
-        plantsData,
-        zonesData,
-        auditsData,
-      ] = await Promise.all([
-        fetchPlants(true),
-        fetchZones(),
-        fetchAudits({
-          page: 1,
-          pageSize: 100,
-          sort: 'newest',
-        }),
-      ])
+  const [
+    selectedZone,
+    setSelectedZone,
+  ] = useState("");
 
-      setPlants(
-        Array.isArray(plantsData)
-          ? plantsData
-          : []
-      )
+  const [
+    selectedStatus,
+    setSelectedStatus,
+  ] = useState("");
 
-      setZones(
-        Array.isArray(zonesData)
-          ? zonesData
-          : []
-      )
+  const [dateFrom, setDateFrom] =
+    useState("");
 
-      setAudits(
-        auditsData?.items || []
-      )
-    } catch (err) {
-      console.error(err)
+  const [dateTo, setDateTo] =
+    useState("");
 
-      setError(
-        err?.response?.data?.detail ||
-          'Unable to load report data.'
-      )
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
+
+  const [exporting, setExporting] =
+    useState(null);
+
+  // ==========================================================
+  // LOAD DATA
+  // ==========================================================
+
+  const loadData = useCallback(
+    async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const [
+          plantsData,
+          zonesData,
+          auditsData,
+        ] = await Promise.all([
+          fetchPlants(true),
+
+          fetchZones(),
+
+          fetchAudits({
+            page: 1,
+            pageSize: 100,
+            sort: "newest",
+          }),
+        ]);
+
+        setPlants(
+          Array.isArray(
+            plantsData
+          )
+            ? plantsData
+            : []
+        );
+
+        setZones(
+          Array.isArray(
+            zonesData
+          )
+            ? zonesData
+            : []
+        );
+
+        setAudits(
+          Array.isArray(
+            auditsData?.items
+          )
+            ? auditsData.items
+            : []
+        );
+      } catch (err) {
+        console.error(err);
+
+        setError(
+          err?.response?.data
+            ?.detail ||
+            "Unable to load report data."
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
-    loadData()
-  }, [loadData])
+    loadData();
+  }, [loadData]);
+
+  // ==========================================================
+  // ZONE MAP
+  // ==========================================================
 
   const zoneMap = useMemo(() => {
     return Object.fromEntries(
       zones.map((zone) => [
-        zone.id,
+        String(zone.id),
         zone,
       ])
-    )
-  }, [zones])
+    );
+  }, [zones]);
+
+  // ==========================================================
+  // FILTERED ZONES
+  // ==========================================================
 
   const filteredZones = useMemo(() => {
     if (!selectedPlant) {
-      return zones
+      return zones;
     }
 
     return zones.filter(
       (zone) =>
-        zone.plant_id === selectedPlant
-    )
-  }, [zones, selectedPlant])
+        String(zone.plant_id) ===
+        String(selectedPlant)
+    );
+  }, [
+    zones,
+    selectedPlant,
+  ]);
 
   useEffect(() => {
     if (
       selectedZone &&
       !filteredZones.some(
-        (zone) => zone.id === selectedZone
+        (zone) =>
+          String(zone.id) ===
+          String(selectedZone)
       )
     ) {
-      setSelectedZone('')
+      setSelectedZone("");
     }
   }, [
     filteredZones,
     selectedZone,
-  ])
+  ]);
+
+  // ==========================================================
+  // FILTERED AUDITS
+  // ==========================================================
 
   const filteredAudits = useMemo(() => {
-    return audits.filter((audit) => {
-      const zone =
-        zoneMap[audit.zone_id] ||
-        audit.zone
+    return audits.filter(
+      (audit) => {
+        const zone =
+          zoneMap[
+            String(audit.zone_id)
+          ] ||
+          audit.zone;
 
-      const plantId =
-        zone?.plant_id ||
-        zone?.plant?.id ||
-        ''
+        const plantId =
+          zone?.plant_id ||
+          zone?.plant?.id ||
+          "";
 
-      const zoneId =
-        audit.zone_id ||
-        audit.zone?.id ||
-        ''
-
-      if (
-        selectedPlant &&
-        plantId !== selectedPlant
-      ) {
-        return false
-      }
-
-      if (
-        selectedZone &&
-        zoneId !== selectedZone
-      ) {
-        return false
-      }
-
-      if (
-        selectedStatus &&
-        audit.status !== selectedStatus
-      ) {
-        return false
-      }
-
-      if (dateFrom) {
-        const auditDate =
-          audit.audit_date?.slice(0, 10)
+        const zoneId =
+          audit.zone_id ||
+          audit.zone?.id ||
+          "";
 
         if (
-          !auditDate ||
-          auditDate < dateFrom
+          selectedPlant &&
+          String(plantId) !==
+            String(selectedPlant)
         ) {
-          return false
+          return false;
         }
-      }
-
-      if (dateTo) {
-        const auditDate =
-          audit.audit_date?.slice(0, 10)
 
         if (
-          !auditDate ||
-          auditDate > dateTo
+          selectedZone &&
+          String(zoneId) !==
+            String(selectedZone)
         ) {
-          return false
+          return false;
         }
-      }
 
-      return true
-    })
+        if (
+          selectedStatus &&
+          audit.status !==
+            selectedStatus
+        ) {
+          return false;
+        }
+
+        if (dateFrom) {
+          const auditDate =
+            audit.audit_date?.slice(
+              0,
+              10
+            );
+
+          if (
+            !auditDate ||
+            auditDate < dateFrom
+          ) {
+            return false;
+          }
+        }
+
+        if (dateTo) {
+          const auditDate =
+            audit.audit_date?.slice(
+              0,
+              10
+            );
+
+          if (
+            !auditDate ||
+            auditDate > dateTo
+          ) {
+            return false;
+          }
+        }
+
+        return true;
+      }
+    );
   }, [
     audits,
     zoneMap,
@@ -299,81 +797,96 @@ export default function AdminReportsPage() {
     selectedStatus,
     dateFrom,
     dateTo,
-  ])
+  ]);
+
+  // ==========================================================
+  // METRICS
+  // ==========================================================
 
   const metrics = useMemo(() => {
-    const total = filteredAudits.length
+    const total =
+      filteredAudits.length;
 
-    const submitted = filteredAudits.filter(
-      (audit) =>
-        audit.status === 'SUBMITTED'
-    ).length
+    const submitted =
+      filteredAudits.filter(
+        (audit) =>
+          audit.status ===
+          "SUBMITTED"
+      ).length;
 
-    const ongoing = filteredAudits.filter(
-      (audit) =>
-        audit.status === 'IN_PROGRESS'
-    ).length
+    const ongoing =
+      filteredAudits.filter(
+        (audit) =>
+          audit.status ===
+          "IN_PROGRESS"
+      ).length;
 
-    const draft = filteredAudits.filter(
-      (audit) =>
-        audit.status === 'DRAFT'
-    ).length
+    const draft =
+      filteredAudits.filter(
+        (audit) =>
+          audit.status ===
+          "DRAFT"
+      ).length;
 
     const observations =
       filteredAudits.reduce(
         (sum, audit) =>
           sum +
           Number(
-            audit.total_observations || 0
+            audit.total_observations ||
+              0
           ),
         0
-      )
+      );
 
     const high =
       filteredAudits.reduce(
         (sum, audit) =>
           sum +
           Number(
-            audit.high_observations || 0
+            audit.high_observations ||
+              0
           ),
         0
-      )
+      );
 
     const medium =
       filteredAudits.reduce(
         (sum, audit) =>
           sum +
           Number(
-            audit.medium_observations || 0
+            audit.medium_observations ||
+              0
           ),
         0
-      )
+      );
 
     const low =
       filteredAudits.reduce(
         (sum, audit) =>
           sum +
           Number(
-            audit.low_observations || 0
+            audit.low_observations ||
+              0
           ),
         0
-      )
+      );
 
     const closed =
       filteredAudits.reduce(
         (sum, audit) =>
           sum +
           Number(
-            audit.closed_observations || 0
+            audit.closed_observations ||
+              0
           ),
         0
-      )
+      );
 
-    const open =
-      Math.max(
-        0,
-        observations - closed
-      )
+    const open = Math.max(
+      0,
+      observations - closed
+    );
 
     return {
       total,
@@ -386,109 +899,149 @@ export default function AdminReportsPage() {
       low,
       open,
       closed,
-    }
-  }, [filteredAudits])
+    };
+  }, [filteredAudits]);
 
-  const plantPerformance = useMemo(() => {
-    return plants
-      .map((plant) => {
-        const plantAudits =
-          filteredAudits.filter((audit) => {
-            const zone =
-              zoneMap[audit.zone_id] ||
-              audit.zone
+  // ==========================================================
+  // PLANT PERFORMANCE
+  // ==========================================================
 
-            return (
-              zone?.plant_id === plant.id ||
-              zone?.plant?.id === plant.id
-            )
-          })
+  const plantPerformance =
+    useMemo(() => {
+      return plants
+        .map((plant) => {
+          const plantAudits =
+            filteredAudits.filter(
+              (audit) => {
+                const zone =
+                  zoneMap[
+                    String(
+                      audit.zone_id
+                    )
+                  ] ||
+                  audit.zone;
 
-        const submitted =
-          plantAudits.filter(
-            (audit) =>
-              audit.status === 'SUBMITTED'
-          )
+                return (
+                  String(
+                    zone?.plant_id
+                  ) ===
+                    String(
+                      plant.id
+                    ) ||
+                  String(
+                    zone?.plant?.id
+                  ) ===
+                    String(
+                      plant.id
+                    )
+                );
+              }
+            );
 
-        const totalObservations =
-          plantAudits.reduce(
-            (sum, audit) =>
-              sum +
-              Number(
-                audit.total_observations || 0
-              ),
-            0
-          )
+          const submitted =
+            plantAudits.filter(
+              (audit) =>
+                audit.status ===
+                "SUBMITTED"
+            );
 
-        const highObservations =
-          plantAudits.reduce(
-            (sum, audit) =>
-              sum +
-              Number(
-                audit.high_observations || 0
-              ),
-            0
-          )
+          const totalObservations =
+            plantAudits.reduce(
+              (sum, audit) =>
+                sum +
+                Number(
+                  audit.total_observations ||
+                    0
+                ),
+              0
+            );
 
-        const scores =
-          submitted
-            .map((audit) =>
-              Number(
-                audit.score ??
-                  audit.total_score ??
-                  audit.overall_score ??
-                  0
+          const highObservations =
+            plantAudits.reduce(
+              (sum, audit) =>
+                sum +
+                Number(
+                  audit.high_observations ||
+                    0
+                ),
+              0
+            );
+
+          const scores =
+            submitted
+              .map((audit) =>
+                Number(
+                  audit.score ??
+                    audit.total_score ??
+                    audit.overall_score ??
+                    0
+                )
               )
-            )
-            .filter(
-              (score) =>
-                Number.isFinite(score) &&
-                score > 0
-            )
+              .filter(
+                (score) =>
+                  Number.isFinite(
+                    score
+                  ) &&
+                  score > 0
+              );
 
-        const score =
-          scores.length > 0
-            ? Math.round(
-                scores.reduce(
-                  (sum, value) =>
-                    sum + value,
-                  0
-                ) / scores.length
-              )
-            : 0
+          const score =
+            scores.length > 0
+              ? Math.round(
+                  scores.reduce(
+                    (
+                      sum,
+                      value
+                    ) =>
+                      sum + value,
+                    0
+                  ) /
+                    scores.length
+                )
+              : 0;
 
-        return {
-          ...plant,
-          auditCount:
-            plantAudits.length,
-          submittedCount:
-            submitted.length,
-          observationCount:
-            totalObservations,
-          highObservationCount:
-            highObservations,
-          score,
-        }
-      })
-      .filter(
-        (plant) =>
-          plant.auditCount > 0
-      )
-      .sort(
-        (a, b) =>
-          b.auditCount -
-          a.auditCount
-      )
-  }, [
-    plants,
-    filteredAudits,
-    zoneMap,
-  ])
+          return {
+            ...plant,
+
+            auditCount:
+              plantAudits.length,
+
+            submittedCount:
+              submitted.length,
+
+            observationCount:
+              totalObservations,
+
+            highObservationCount:
+              highObservations,
+
+            score,
+          };
+        })
+        .filter(
+          (plant) =>
+            plant.auditCount >
+            0
+        )
+        .sort(
+          (a, b) =>
+            b.auditCount -
+            a.auditCount
+        );
+    }, [
+      plants,
+      filteredAudits,
+      zoneMap,
+    ]);
+
+  // ==========================================================
+  // SEVERITY
+  // ==========================================================
 
   const severityTotal =
     metrics.high +
     metrics.medium +
-    metrics.low
+    metrics.low;
 
   const highPercent =
     severityTotal > 0
@@ -497,7 +1050,7 @@ export default function AdminReportsPage() {
             severityTotal) *
             100
         )
-      : 0
+      : 0;
 
   const mediumPercent =
     severityTotal > 0
@@ -506,7 +1059,7 @@ export default function AdminReportsPage() {
             severityTotal) *
             100
         )
-      : 0
+      : 0;
 
   const lowPercent =
     severityTotal > 0
@@ -515,847 +1068,1177 @@ export default function AdminReportsPage() {
             severityTotal) *
             100
         )
-      : 0
+      : 0;
+
+  // ==========================================================
+  // EXPORT
+  // ==========================================================
 
   async function exportAudit(
     auditId,
     type
   ) {
     const key =
-      `${auditId}-${type}`
+      `${auditId}-${type}`;
 
     try {
-      setExporting(key)
+      setExporting(key);
 
       const response =
         await apiClient.get(
           `/audits/${auditId}/export/${type}`,
           {
-            responseType: 'blob',
+            responseType: "blob",
           }
-        )
+        );
 
       const contentType =
         response.headers[
-          'content-type'
+          "content-type"
         ] ||
-        'application/octet-stream'
+        "application/octet-stream";
 
       const blob = new Blob(
         [response.data],
         {
           type: contentType,
         }
-      )
+      );
 
       const url =
         window.URL.createObjectURL(
           blob
-        )
+        );
 
       const link =
-        document.createElement('a')
+        document.createElement(
+          "a"
+        );
 
-      link.href = url
+      link.href = url;
 
       const extension =
-        type === 'pdf'
-          ? 'pdf'
-          : 'xlsx'
+        type === "pdf"
+          ? "pdf"
+          : "xlsx";
 
       link.download =
-        `${auditId}-audit-report.${extension}`
+        `${auditId}-audit-report.${extension}`;
 
-      document.body.appendChild(link)
+      document.body.appendChild(
+        link
+      );
 
-      link.click()
+      link.click();
 
-      link.remove()
+      link.remove();
 
       window.URL.revokeObjectURL(
         url
-      )
+      );
     } catch (err) {
       console.error(
-        'Report export failed:',
+        "Report export failed:",
         err
-      )
+      );
 
       window.alert(
         `Unable to export ${type.toUpperCase()} report.`
-      )
+      );
     } finally {
-      setExporting(null)
+      setExporting(null);
     }
   }
 
+  // ==========================================================
+  // CLEAR FILTERS
+  // ==========================================================
+
   function clearFilters() {
-    setSelectedPlant('')
-    setSelectedZone('')
-    setSelectedStatus('')
-    setDateFrom('')
-    setDateTo('')
+    setSelectedPlant("");
+    setSelectedZone("");
+    setSelectedStatus("");
+    setDateFrom("");
+    setDateTo("");
   }
+
+  const hasFilters =
+    Boolean(
+      selectedPlant ||
+        selectedZone ||
+        selectedStatus ||
+        dateFrom ||
+        dateTo
+    );
+
+  // ==========================================================
+  // LOADING
+  // ==========================================================
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-7xl animate-fade-in">
-        <div className="mb-6">
-          <div className="h-7 w-40 animate-pulse rounded bg-canvas" />
-          <div className="mt-2 h-4 w-72 animate-pulse rounded bg-canvas" />
-        </div>
+      <div className="min-h-full bg-[#f4f7f9]">
+        <div className="mx-auto max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8">
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {Array.from({
-            length: 8,
-          }).map((_, index) => (
-            <div
-              key={index}
-              className="h-32 animate-pulse rounded-2xl border border-line bg-surface"
-            />
-          ))}
+          <div className="animate-pulse">
+
+            <div className="h-3 w-28 rounded bg-[#e2e9ed]" />
+
+            <div className="mt-3 h-8 w-36 rounded bg-[#e2e9ed]" />
+
+            <div className="mt-2 h-4 w-96 max-w-full rounded bg-[#e8eef1]" />
+
+            <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+
+              {Array.from({
+                length: 4,
+              }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-28 rounded-xl border border-[#e0e7eb] bg-white"
+                />
+              ))}
+
+            </div>
+
+            <div className="mt-5 h-64 rounded-xl border border-[#e0e7eb] bg-white" />
+
+            <div className="mt-5 h-80 rounded-xl border border-[#e0e7eb] bg-white" />
+
+          </div>
+
         </div>
       </div>
-    )
+    );
   }
 
+  // ==========================================================
+  // PAGE
+  // ==========================================================
+
   return (
-    <div className="mx-auto max-w-7xl animate-fade-in pb-8">
+    <div className="min-h-full bg-[#f4f7f9]">
 
-      {/* HEADER */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-ink2 sm:text-[1.75rem]">
-            Reports
-          </h1>
+      <div className="mx-auto max-w-[1500px] px-5 py-6 sm:px-6 lg:px-8 xl:px-10">
 
-          <p className="mt-1 max-w-2xl text-sm text-ink2-secondary">
-            Analyze audit performance, plant performance,
-            zone activity and observation trends.
-          </p>
-        </div>
+        {/* ====================================================
+            HEADER
+        ==================================================== */}
 
-        <button
-          type="button"
-          onClick={loadData}
-          className="inline-flex min-h-10 items-center justify-center rounded-lg border border-line-strong bg-surface px-4 text-sm font-semibold text-ink2 transition-colors hover:bg-canvas"
-        >
-          Refresh Reports
-        </button>
-      </div>
+        <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
 
-      {/* ERROR */}
-      {error && (
-        <div className="mb-5 rounded-xl border border-danger/20 bg-danger-soft px-4 py-3 text-sm font-medium text-danger">
-          {error}
-        </div>
-      )}
+          <div>
 
-      {/* FILTERS */}
-      <div className="mb-6 rounded-2xl border border-line bg-surface p-4 shadow-xs sm:p-5">
-        <div className="mb-4 flex flex-col gap-1">
-          <h2 className="text-sm font-bold text-ink2">
-            Report Filters
-          </h2>
+            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#83939d]">
 
-          <p className="text-xs text-ink2-secondary">
-            Filter all report metrics and analysis.
-          </p>
-        </div>
+              <span>
+                Administration
+              </span>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <span className="text-[#b9c4ca]">
+                /
+              </span>
 
-          <select
-            value={selectedPlant}
-            onChange={(event) =>
-              setSelectedPlant(
-                event.target.value
-              )
-            }
-            className="min-h-11 rounded-lg border border-line-strong bg-surface px-3 text-sm text-ink2 outline-none focus:border-brand"
-          >
-            <option value="">
-              All Plants
-            </option>
+              <span className="text-[#3d6d8a]">
+                Reporting
+              </span>
 
-            {plants.map((plant) => (
-              <option
-                key={plant.id}
-                value={plant.id}
-              >
-                {plant.name}
-              </option>
-            ))}
-          </select>
+            </div>
 
-          <select
-            value={selectedZone}
-            onChange={(event) =>
-              setSelectedZone(
-                event.target.value
-              )
-            }
-            className="min-h-11 rounded-lg border border-line-strong bg-surface px-3 text-sm text-ink2 outline-none focus:border-brand"
-          >
-            <option value="">
-              All Zones
-            </option>
+            <h1 className="text-[29px] font-bold tracking-[-0.035em] text-[#172d3d]">
+              Reports
+            </h1>
 
-            {filteredZones.map((zone) => (
-              <option
-                key={zone.id}
-                value={zone.id}
-              >
-                {zone.name}
-              </option>
-            ))}
-          </select>
+            <p className="mt-2 max-w-[720px] text-[12px] leading-6 text-[#71828d]">
+              Review audit performance, observation
+              trends and plant-level activity from one
+              management reporting view.
+            </p>
 
-          <select
-            value={selectedStatus}
-            onChange={(event) =>
-              setSelectedStatus(
-                event.target.value
-              )
-            }
-            className="min-h-11 rounded-lg border border-line-strong bg-surface px-3 text-sm text-ink2 outline-none focus:border-brand"
-          >
-            <option value="">
-              All Status
-            </option>
-
-            <option value="SUBMITTED">
-              Submitted
-            </option>
-
-            <option value="IN_PROGRESS">
-              In Progress
-            </option>
-
-            <option value="DRAFT">
-              Draft
-            </option>
-          </select>
-
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(event) =>
-              setDateFrom(
-                event.target.value
-              )
-            }
-            className="min-h-11 rounded-lg border border-line-strong bg-surface px-3 text-sm text-ink2 outline-none focus:border-brand"
-          />
-
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(event) =>
-              setDateTo(
-                event.target.value
-              )
-            }
-            className="min-h-11 rounded-lg border border-line-strong bg-surface px-3 text-sm text-ink2 outline-none focus:border-brand"
-          />
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <span className="text-xs text-ink2-muted">
-            Showing{' '}
-            <strong className="text-ink2">
-              {filteredAudits.length}
-            </strong>{' '}
-            audits
-          </span>
+          </div>
 
           <button
             type="button"
-            onClick={clearFilters}
-            className="text-xs font-semibold text-brand hover:underline"
+            onClick={loadData}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#d5e0e6] bg-white px-4 text-[11px] font-bold text-[#607480] transition hover:bg-[#f7f9fa]"
           >
-            Clear Filters
+            <RefreshIcon />
+            Refresh Reports
           </button>
+
         </div>
-      </div>
 
-      {/* KPI CARDS */}
-      <div className="mb-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {/* ====================================================
+            ERROR
+        ==================================================== */}
 
-        <MetricCard
-          title="Total Audits"
-          value={metrics.total}
-          subtitle="Matching selected filters"
-          onClick={() =>
-            navigate('/admin/audits')
-          }
-          icon={
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
+        {error && (
+          <div className="mb-5 flex items-start justify-between gap-4 rounded-lg border border-[#efd4d4] bg-[#fdf3f3] px-4 py-3 text-[11px] font-semibold text-[#a54d4d]">
+
+            <span>
+              {error}
+            </span>
+
+            <button
+              type="button"
+              onClick={loadData}
+              className="shrink-0 font-bold underline"
             >
-              <path d="M6 3h12v18H6z" />
-              <path d="M9 7h6" />
-              <path d="M9 11h6" />
-              <path d="M9 15h4" />
-            </svg>
-          }
-        />
+              Retry
+            </button>
 
-        <MetricCard
-          title="Submitted"
-          value={metrics.submitted}
-          subtitle="Completed audit reports"
-          onClick={() =>
-            navigate(
-              '/admin/audits?status=SUBMITTED'
-            )
-          }
-          icon={
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <path d="M5 12l4 4L19 6" />
-            </svg>
-          }
-        />
+          </div>
+        )}
 
-        <MetricCard
-          title="Ongoing"
-          value={metrics.ongoing}
-          subtitle="Audits in progress"
-          onClick={() =>
-            navigate(
-              '/admin/audits?status=IN_PROGRESS'
-            )
-          }
-          icon={
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="8"
+        {/* ====================================================
+            FILTER PANEL
+        ==================================================== */}
+
+        <section className="mb-5 overflow-hidden rounded-xl border border-[#dfe7ec] bg-white shadow-[0_1px_2px_rgba(25,55,72,0.025)]">
+
+          <div className="flex flex-col gap-3 border-b border-[#e5ebef] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+
+            <div className="flex items-center gap-3">
+
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#eef5f9] text-[#3d6e8d]">
+                <FilterIcon />
+              </div>
+
+              <div>
+
+                <h2 className="text-[12px] font-bold text-[#293f4e]">
+                  Report Filters
+                </h2>
+
+                <p className="mt-0.5 text-[10px] text-[#8998a1]">
+                  Refine the reporting dataset.
+                </p>
+
+              </div>
+
+            </div>
+
+            {hasFilters && (
+              <button
+                type="button"
+                onClick={
+                  clearFilters
+                }
+                className="text-left text-[10px] font-bold text-[#356d8c] hover:underline sm:text-right"
+              >
+                Clear all filters
+              </button>
+            )}
+
+          </div>
+
+          <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
+
+            {/* PLANT */}
+
+            <div>
+              <label className="mb-1.5 block text-[9px] font-bold uppercase tracking-[0.1em] text-[#83939d]">
+                Plant
+              </label>
+
+              <select
+                value={
+                  selectedPlant
+                }
+                onChange={(event) =>
+                  setSelectedPlant(
+                    event.target
+                      .value
+                  )
+                }
+                className="h-10 w-full rounded-lg border border-[#d7e1e6] bg-white px-3 text-[11px] font-medium text-[#405764] outline-none transition focus:border-[#4d7d98] focus:ring-4 focus:ring-[#e8f1f5]"
+              >
+                <option value="">
+                  All Plants
+                </option>
+
+                {plants.map(
+                  (plant) => (
+                    <option
+                      key={
+                        plant.id
+                      }
+                      value={
+                        plant.id
+                      }
+                    >
+                      {
+                        plant.name
+                      }
+                    </option>
+                  )
+                )}
+
+              </select>
+
+            </div>
+
+            {/* ZONE */}
+
+            <div>
+              <label className="mb-1.5 block text-[9px] font-bold uppercase tracking-[0.1em] text-[#83939d]">
+                Zone
+              </label>
+
+              <select
+                value={
+                  selectedZone
+                }
+                onChange={(event) =>
+                  setSelectedZone(
+                    event.target
+                      .value
+                  )
+                }
+                className="h-10 w-full rounded-lg border border-[#d7e1e6] bg-white px-3 text-[11px] font-medium text-[#405764] outline-none transition focus:border-[#4d7d98] focus:ring-4 focus:ring-[#e8f1f5]"
+              >
+                <option value="">
+                  All Zones
+                </option>
+
+                {filteredZones.map(
+                  (zone) => (
+                    <option
+                      key={
+                        zone.id
+                      }
+                      value={
+                        zone.id
+                      }
+                    >
+                      {
+                        zone.name
+                      }
+                    </option>
+                  )
+                )}
+
+              </select>
+
+            </div>
+
+            {/* STATUS */}
+
+            <div>
+              <label className="mb-1.5 block text-[9px] font-bold uppercase tracking-[0.1em] text-[#83939d]">
+                Status
+              </label>
+
+              <select
+                value={
+                  selectedStatus
+                }
+                onChange={(event) =>
+                  setSelectedStatus(
+                    event.target
+                      .value
+                  )
+                }
+                className="h-10 w-full rounded-lg border border-[#d7e1e6] bg-white px-3 text-[11px] font-medium text-[#405764] outline-none transition focus:border-[#4d7d98] focus:ring-4 focus:ring-[#e8f1f5]"
+              >
+                <option value="">
+                  All Status
+                </option>
+
+                <option value="SUBMITTED">
+                  Submitted
+                </option>
+
+                <option value="IN_PROGRESS">
+                  In Progress
+                </option>
+
+                <option value="DRAFT">
+                  Draft
+                </option>
+
+              </select>
+
+            </div>
+
+            {/* FROM */}
+
+            <div>
+              <label className="mb-1.5 block text-[9px] font-bold uppercase tracking-[0.1em] text-[#83939d]">
+                From Date
+              </label>
+
+              <input
+                type="date"
+                value={
+                  dateFrom
+                }
+                onChange={(event) =>
+                  setDateFrom(
+                    event.target
+                      .value
+                  )
+                }
+                className="h-10 w-full rounded-lg border border-[#d7e1e6] bg-white px-3 text-[11px] font-medium text-[#405764] outline-none transition focus:border-[#4d7d98] focus:ring-4 focus:ring-[#e8f1f5]"
               />
-              <path d="M12 8v5l3 2" />
-            </svg>
-          }
-        />
+            </div>
 
-        <MetricCard
-          title="Draft"
-          value={metrics.draft}
-          subtitle="Audits not submitted"
-          onClick={() =>
-            navigate(
-              '/admin/audits?status=DRAFT'
-            )
-          }
-          icon={
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <path d="M4 20h16" />
-              <path d="M6 16l9-9 3 3-9 9H6z" />
-            </svg>
-          }
-        />
+            {/* TO */}
 
-        <MetricCard
-          title="Observations"
-          value={metrics.observations}
-          subtitle="Total findings"
-          onClick={() =>
-            navigate('/admin/audits')
-          }
-          icon={
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="8"
+            <div>
+              <label className="mb-1.5 block text-[9px] font-bold uppercase tracking-[0.1em] text-[#83939d]">
+                To Date
+              </label>
+
+              <input
+                type="date"
+                value={
+                  dateTo
+                }
+                onChange={(event) =>
+                  setDateTo(
+                    event.target
+                      .value
+                  )
+                }
+                className="h-10 w-full rounded-lg border border-[#d7e1e6] bg-white px-3 text-[11px] font-medium text-[#405764] outline-none transition focus:border-[#4d7d98] focus:ring-4 focus:ring-[#e8f1f5]"
               />
-              <path d="M12 8v5" />
-              <path d="M12 16h.01" />
-            </svg>
-          }
-        />
+            </div>
 
-        <MetricCard
-          title="High Severity"
-          value={metrics.high}
-          subtitle="High priority findings"
-          onClick={() =>
-            navigate('/admin/audits')
-          }
-          icon={
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <path d="M12 4l9 16H3L12 4z" />
-              <path d="M12 9v5" />
-              <path d="M12 17h.01" />
-            </svg>
-          }
-        />
+          </div>
 
-        <MetricCard
-          title="Open"
-          value={metrics.open}
-          subtitle="Open observations"
-          onClick={() =>
-            navigate('/admin/audits')
-          }
-          icon={
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="8"
-              />
-              <path d="M12 8v4" />
-              <path d="M12 16h.01" />
-            </svg>
-          }
-        />
+          <div className="border-t border-[#edf1f3] px-5 py-3">
 
-        <MetricCard
-          title="Closed"
-          value={metrics.closed}
-          subtitle="Closed observations"
-          onClick={() =>
-            navigate('/admin/audits')
-          }
-          icon={
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="8"
-              />
-              <path d="M8 12l3 3 5-6" />
-            </svg>
-          }
-        />
-      </div>
+            <span className="text-[10px] text-[#8797a1]">
+              Showing{" "}
+              <strong className="font-bold text-[#304856]">
+                {filteredAudits.length}
+              </strong>{" "}
+              of{" "}
+              <strong className="font-bold text-[#304856]">
+                {audits.length}
+              </strong>{" "}
+              loaded audits
+            </span>
 
-      {/* ANALYSIS GRID */}
-      <div className="grid gap-5 xl:grid-cols-2">
+          </div>
 
-        {/* AUDIT STATUS */}
-        <section className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
-          <SectionHeader
-            title="Audit Status"
-            description="Current distribution of audit workflow status."
+        </section>
+
+        {/* ====================================================
+            KPI SUMMARY
+        ==================================================== */}
+
+        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+
+          <MetricCard
+            title="Total Audits"
+            value={metrics.total}
+            subtitle="Matching filters"
+            onClick={() =>
+              navigate(
+                "/admin/audits"
+              )
+            }
+            icon={
+              <ReportIcon />
+            }
+            iconClass="bg-[#eef5f9] text-[#3d6e8d]"
           />
 
-          <div className="grid gap-6 sm:grid-cols-[180px_1fr] sm:items-center">
+          <MetricCard
+            title="Submitted"
+            value={
+              metrics.submitted
+            }
+            subtitle="Completed reports"
+            onClick={() =>
+              navigate(
+                "/admin/audits?status=SUBMITTED"
+              )
+            }
+            icon={
+              <CheckIcon />
+            }
+            iconClass="bg-[#eef7f1] text-[#43805e]"
+          />
 
-            <div
-              className="mx-auto flex h-40 w-40 items-center justify-center rounded-full"
-              style={{
-                background: `conic-gradient(
-                  #2563eb 0 ${metrics.total ? (metrics.submitted / metrics.total) * 100 : 0}%,
-                  #f59e0b ${metrics.total ? (metrics.submitted / metrics.total) * 100 : 0}% ${metrics.total ? ((metrics.submitted + metrics.ongoing) / metrics.total) * 100 : 0}%,
-                  #cbd5e1 ${metrics.total ? ((metrics.submitted + metrics.ongoing) / metrics.total) * 100 : 0}% 100%
-                )`,
-              }}
-            >
-              <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-surface">
-                <span className="text-2xl font-bold text-ink2">
-                  {metrics.total}
-                </span>
+          <MetricCard
+            title="In Progress"
+            value={
+              metrics.ongoing
+            }
+            subtitle="Active audits"
+            onClick={() =>
+              navigate(
+                "/admin/audits?status=IN_PROGRESS"
+              )
+            }
+            icon={
+              <ClockIcon />
+            }
+            iconClass="bg-[#faf6eb] text-[#9a7838]"
+          />
 
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-ink2-muted">
+          <MetricCard
+            title="Draft"
+            value={
+              metrics.draft
+            }
+            subtitle="Not submitted"
+            onClick={() =>
+              navigate(
+                "/admin/audits?status=DRAFT"
+              )
+            }
+            icon={
+              <DraftIcon />
+            }
+            iconClass="bg-[#f2f4f5] text-[#70818a]"
+          />
+
+        </div>
+
+        {/* ====================================================
+            OBSERVATION SUMMARY
+        ==================================================== */}
+
+        <div className="mb-5 grid gap-5 xl:grid-cols-[1.05fr_.95fr]">
+
+          {/* AUDIT WORKFLOW */}
+
+          <section className="rounded-xl border border-[#dfe7ec] bg-white p-5 shadow-[0_1px_2px_rgba(25,55,72,0.025)]">
+
+            <SectionHeader
+              title="Audit Workflow"
+              description="Current distribution of audits by workflow status."
+            />
+
+            <div className="grid gap-6 sm:grid-cols-[180px_1fr] sm:items-center">
+
+              {/* DONUT */}
+
+              <div className="flex justify-center">
+
+                <div
+                  className="flex h-[150px] w-[150px] items-center justify-center rounded-full"
+                  style={{
+                    background:
+                      `conic-gradient(
+                        #4a7e9b 0 ${
+                          metrics.total
+                            ? (metrics.submitted /
+                                metrics.total) *
+                              100
+                            : 0
+                        }%,
+                        #b18a45 ${
+                          metrics.total
+                            ? (metrics.submitted /
+                                metrics.total) *
+                              100
+                            : 0
+                        }% ${
+                          metrics.total
+                            ? ((metrics.submitted +
+                                metrics.ongoing) /
+                                metrics.total) *
+                              100
+                            : 0
+                        }%,
+                        #d5dde1 ${
+                          metrics.total
+                            ? ((metrics.submitted +
+                                metrics.ongoing) /
+                                metrics.total) *
+                              100
+                            : 0
+                        }% 100%
+                      )`,
+                  }}
+                >
+
+                  <div className="flex h-[96px] w-[96px] flex-col items-center justify-center rounded-full bg-white">
+
+                    <span className="text-[25px] font-bold tracking-[-0.04em] text-[#293f4e]">
+                      {formatNumber(
+                        metrics.total
+                      )}
+                    </span>
+
+                    <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-[#8998a1]">
+                      Audits
+                    </span>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* LEGEND */}
+
+              <div className="space-y-4">
+
+                <div className="flex items-center justify-between gap-4 border-b border-[#edf1f3] pb-3">
+
+                  <div className="flex items-center gap-2">
+
+                    <span className="h-2 w-2 rounded-full bg-[#4a7e9b]" />
+
+                    <span className="text-[11px] font-medium text-[#506671]">
+                      Submitted
+                    </span>
+
+                  </div>
+
+                  <strong className="text-[12px] text-[#293f4e]">
+                    {formatNumber(
+                      metrics.submitted
+                    )}
+                  </strong>
+
+                </div>
+
+                <div className="flex items-center justify-between gap-4 border-b border-[#edf1f3] pb-3">
+
+                  <div className="flex items-center gap-2">
+
+                    <span className="h-2 w-2 rounded-full bg-[#b18a45]" />
+
+                    <span className="text-[11px] font-medium text-[#506671]">
+                      In Progress
+                    </span>
+
+                  </div>
+
+                  <strong className="text-[12px] text-[#293f4e]">
+                    {formatNumber(
+                      metrics.ongoing
+                    )}
+                  </strong>
+
+                </div>
+
+                <div className="flex items-center justify-between gap-4">
+
+                  <div className="flex items-center gap-2">
+
+                    <span className="h-2 w-2 rounded-full bg-[#9aa7ad]" />
+
+                    <span className="text-[11px] font-medium text-[#506671]">
+                      Draft
+                    </span>
+
+                  </div>
+
+                  <strong className="text-[12px] text-[#293f4e]">
+                    {formatNumber(
+                      metrics.draft
+                    )}
+                  </strong>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </section>
+
+          {/* OBSERVATIONS */}
+
+          <section className="rounded-xl border border-[#dfe7ec] bg-white p-5 shadow-[0_1px_2px_rgba(25,55,72,0.025)]">
+
+            <SectionHeader
+              title="Observation Analysis"
+              description="Severity and closure status across selected audits."
+            />
+
+            <div className="space-y-5">
+
+              {/* HIGH */}
+
+              <div>
+
+                <div className="mb-2 flex items-center justify-between">
+
+                  <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#687a84]">
+                    High
+                  </span>
+
+                  <span className="text-[11px] font-bold text-[#a54d4d]">
+                    {formatNumber(
+                      metrics.high
+                    )}{" "}
+                    <span className="ml-1 text-[9px] font-medium text-[#9aa6ad]">
+                      ({highPercent}%)
+                    </span>
+                  </span>
+
+                </div>
+
+                <div className="h-2 overflow-hidden rounded-full bg-[#f0f3f4]">
+
+                  <div
+                    className="h-full rounded-full bg-[#b95c5c] transition-all"
+                    style={{
+                      width: `${highPercent}%`,
+                    }}
+                  />
+
+                </div>
+
+              </div>
+
+              {/* MEDIUM */}
+
+              <div>
+
+                <div className="mb-2 flex items-center justify-between">
+
+                  <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#687a84]">
+                    Medium
+                  </span>
+
+                  <span className="text-[11px] font-bold text-[#927033]">
+                    {formatNumber(
+                      metrics.medium
+                    )}{" "}
+                    <span className="ml-1 text-[9px] font-medium text-[#9aa6ad]">
+                      ({mediumPercent}%)
+                    </span>
+                  </span>
+
+                </div>
+
+                <div className="h-2 overflow-hidden rounded-full bg-[#f0f3f4]">
+
+                  <div
+                    className="h-full rounded-full bg-[#b38b42] transition-all"
+                    style={{
+                      width: `${mediumPercent}%`,
+                    }}
+                  />
+
+                </div>
+
+              </div>
+
+              {/* LOW */}
+
+              <div>
+
+                <div className="mb-2 flex items-center justify-between">
+
+                  <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#687a84]">
+                    Low
+                  </span>
+
+                  <span className="text-[11px] font-bold text-[#6c7d85]">
+                    {formatNumber(
+                      metrics.low
+                    )}{" "}
+                    <span className="ml-1 text-[9px] font-medium text-[#9aa6ad]">
+                      ({lowPercent}%)
+                    </span>
+                  </span>
+
+                </div>
+
+                <div className="h-2 overflow-hidden rounded-full bg-[#f0f3f4]">
+
+                  <div
+                    className="h-full rounded-full bg-[#8b999f] transition-all"
+                    style={{
+                      width: `${lowPercent}%`,
+                    }}
+                  />
+
+                </div>
+
+              </div>
+
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
+
+              <div className="rounded-lg border border-[#e3e9ec] bg-[#fafcfd] p-4">
+
+                <div className="flex items-center gap-2">
+
+                  <div className="text-[#9a7838]">
+                    <OpenIcon size={15} />
+                  </div>
+
+                  <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#84949e]">
+                    Open
+                  </span>
+
+                </div>
+
+                <div className="mt-2 text-[21px] font-bold tracking-[-0.03em] text-[#304856]">
+                  {formatNumber(
+                    metrics.open
+                  )}
+                </div>
+
+              </div>
+
+              <div className="rounded-lg border border-[#e3e9ec] bg-[#fafcfd] p-4">
+
+                <div className="flex items-center gap-2">
+
+                  <div className="text-[#43805e]">
+                    <ClosedIcon size={15} />
+                  </div>
+
+                  <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#84949e]">
+                    Closed
+                  </span>
+
+                </div>
+
+                <div className="mt-2 text-[21px] font-bold tracking-[-0.03em] text-[#304856]">
+                  {formatNumber(
+                    metrics.closed
+                  )}
+                </div>
+
+              </div>
+
+            </div>
+
+          </section>
+
+        </div>
+
+        {/* ====================================================
+            PLANT PERFORMANCE
+        ==================================================== */}
+
+        <section className="mb-5 overflow-hidden rounded-xl border border-[#dfe7ec] bg-white shadow-[0_1px_2px_rgba(25,55,72,0.025)]">
+
+          <div className="border-b border-[#e5ebef] px-5 py-4">
+
+            <SectionHeader
+              title="Plant Performance"
+              description="Audit activity and observation status by plant."
+            />
+
+          </div>
+
+          {plantPerformance.length ===
+          0 ? (
+            <div className="p-4">
+              <EmptyState
+                icon={
+                  <BuildingIcon />
+                }
+                text="No plant performance data is available for the selected filters."
+              />
+            </div>
+          ) : (
+
+            <div className="divide-y divide-[#edf1f3]">
+
+              {/* TABLE HEADER */}
+
+              <div className="hidden grid-cols-[minmax(220px,1.5fr)_110px_130px_minmax(180px,1fr)_80px] items-center bg-[#f8fafb] px-5 py-3 md:grid">
+
+                <div className="text-[9px] font-bold uppercase tracking-[0.11em] text-[#7d8e98]">
+                  Plant
+                </div>
+
+                <div className="text-[9px] font-bold uppercase tracking-[0.11em] text-[#7d8e98]">
                   Audits
-                </span>
+                </div>
+
+                <div className="text-[9px] font-bold uppercase tracking-[0.11em] text-[#7d8e98]">
+                  Observations
+                </div>
+
+                <div className="text-[9px] font-bold uppercase tracking-[0.11em] text-[#7d8e98]">
+                  Submission
+                </div>
+
+                <div className="text-right text-[9px] font-bold uppercase tracking-[0.11em] text-[#7d8e98]">
+                  Score
+                </div>
+
               </div>
+
+              {plantPerformance.map(
+                (plant) => {
+                  const submissionPercent =
+                    plant.auditCount
+                      ? Math.min(
+                          100,
+                          (plant.submittedCount /
+                            plant.auditCount) *
+                            100
+                        )
+                      : 0;
+
+                  return (
+                    <button
+                      key={plant.id}
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/admin/zones?plant_id=${plant.id}`
+                        )
+                      }
+                      className="group w-full text-left transition hover:bg-[#fbfcfd]"
+                    >
+
+                      {/* DESKTOP */}
+
+                      <div className="hidden grid-cols-[minmax(220px,1.5fr)_110px_130px_minmax(180px,1fr)_80px] items-center px-5 py-4 md:grid">
+
+                        <div className="min-w-0">
+
+                          <div className="flex items-center gap-2">
+
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eef5f9] text-[#47748d]">
+                              <BuildingIcon size={16} />
+                            </span>
+
+                            <div className="min-w-0">
+
+                              <div className="truncate text-[11px] font-bold text-[#304856] group-hover:text-[#245d80]">
+                                {
+                                  plant.name
+                                }
+                              </div>
+
+                              {plant.code && (
+                                <div className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.08em] text-[#8b9aa3]">
+                                  {
+                                    plant.code
+                                  }
+                                </div>
+                              )}
+
+                            </div>
+
+                          </div>
+
+                        </div>
+
+                        <div className="text-[11px] font-bold text-[#506671]">
+                          {
+                            plant.auditCount
+                          }
+                        </div>
+
+                        <div>
+
+                          <div className="text-[11px] font-bold text-[#506671]">
+                            {
+                              plant.observationCount
+                            }
+                          </div>
+
+                          {plant.highObservationCount >
+                            0 && (
+                            <div className="mt-0.5 text-[8px] font-semibold text-[#a54d4d]">
+                              {
+                                plant.highObservationCount
+                              }{" "}
+                              high
+                            </div>
+                          )}
+
+                        </div>
+
+                        <div className="pr-6">
+
+                          <div className="mb-1 flex items-center justify-between">
+
+                            <span className="text-[8px] font-semibold text-[#8998a1]">
+                              Submitted
+                            </span>
+
+                            <span className="text-[9px] font-bold text-[#607480]">
+                              {
+                                plant.submittedCount
+                              }
+                              /
+                              {
+                                plant.auditCount
+                              }
+                            </span>
+
+                          </div>
+
+                          <div className="h-1.5 overflow-hidden rounded-full bg-[#edf1f3]">
+
+                            <div
+                              className="h-full rounded-full bg-[#4d7e99]"
+                              style={{
+                                width: `${submissionPercent}%`,
+                              }}
+                            />
+
+                          </div>
+
+                        </div>
+
+                        <div className="text-right">
+
+                          <span className="text-[11px] font-bold text-[#304856]">
+                            {plant.score
+                              ? `${plant.score}%`
+                              : "—"}
+                          </span>
+
+                        </div>
+
+                      </div>
+
+                      {/* MOBILE */}
+
+                      <div className="flex items-center gap-3 px-4 py-4 md:hidden">
+
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#eef5f9] text-[#47748d]">
+                          <BuildingIcon />
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+
+                          <div className="truncate text-[11px] font-bold text-[#304856]">
+                            {
+                              plant.name
+                            }
+                          </div>
+
+                          <div className="mt-1 text-[9px] text-[#8998a1]">
+                            {
+                              plant.auditCount
+                            }{" "}
+                            audits ·{" "}
+                            {
+                              plant.observationCount
+                            }{" "}
+                            observations
+                          </div>
+
+                          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#edf1f3]">
+
+                            <div
+                              className="h-full rounded-full bg-[#4d7e99]"
+                              style={{
+                                width: `${submissionPercent}%`,
+                              }}
+                            />
+
+                          </div>
+
+                        </div>
+
+                        <div className="shrink-0 text-right">
+
+                          <div className="text-[11px] font-bold text-[#304856]">
+                            {plant.score
+                              ? `${plant.score}%`
+                              : "—"}
+                          </div>
+
+                          <div className="mt-1 text-[#81929d]">
+                            <ArrowRightIcon />
+                          </div>
+
+                        </div>
+
+                      </div>
+
+                    </button>
+                  );
+                }
+              )}
+
             </div>
+          )}
 
-            <div className="space-y-4">
-
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-brand" />
-                  <span className="text-sm text-ink2">
-                    Submitted
-                  </span>
-                </div>
-
-                <strong className="text-sm text-ink2">
-                  {metrics.submitted}
-                </strong>
-              </div>
-
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-warning" />
-                  <span className="text-sm text-ink2">
-                    In Progress
-                  </span>
-                </div>
-
-                <strong className="text-sm text-ink2">
-                  {metrics.ongoing}
-                </strong>
-              </div>
-
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-ink2-muted" />
-                  <span className="text-sm text-ink2">
-                    Draft
-                  </span>
-                </div>
-
-                <strong className="text-sm text-ink2">
-                  {metrics.draft}
-                </strong>
-              </div>
-
-            </div>
-          </div>
         </section>
 
-        {/* OBSERVATION SEVERITY */}
-        <section className="rounded-2xl border border-line bg-surface p-5 shadow-xs">
-          <SectionHeader
-            title="Observation Analysis"
-            description="Severity distribution across the selected audits."
-          />
+        {/* ====================================================
+            RECENT REPORTS
+        ==================================================== */}
 
-          <div className="space-y-5">
+        <section className="overflow-hidden rounded-xl border border-[#dfe7ec] bg-white shadow-[0_1px_2px_rgba(25,55,72,0.025)]">
 
-            <div>
-              <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="font-medium text-ink2">
-                  High
-                </span>
+          <div className="border-b border-[#e5ebef] px-5 py-4">
 
-                <span className="font-bold text-danger">
-                  {metrics.high}
-                </span>
-              </div>
-
-              <div className="h-3 overflow-hidden rounded-full bg-canvas">
-                <div
-                  className="h-full rounded-full bg-danger transition-all"
-                  style={{
-                    width: `${highPercent}%`,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="font-medium text-ink2">
-                  Medium
-                </span>
-
-                <span className="font-bold text-warning">
-                  {metrics.medium}
-                </span>
-              </div>
-
-              <div className="h-3 overflow-hidden rounded-full bg-canvas">
-                <div
-                  className="h-full rounded-full bg-warning transition-all"
-                  style={{
-                    width: `${mediumPercent}%`,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="font-medium text-ink2">
-                  Low
-                </span>
-
-                <span className="font-bold text-ink2-secondary">
-                  {metrics.low}
-                </span>
-              </div>
-
-              <div className="h-3 overflow-hidden rounded-full bg-canvas">
-                <div
-                  className="h-full rounded-full bg-ink2-muted transition-all"
-                  style={{
-                    width: `${lowPercent}%`,
-                  }}
-                />
-              </div>
-            </div>
-
-          </div>
-
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <div className="rounded-xl bg-canvas p-4">
-              <p className="text-xs text-ink2-muted">
-                Open
-              </p>
-
-              <p className="mt-1 text-xl font-bold text-ink2">
-                {metrics.open}
-              </p>
-            </div>
-
-            <div className="rounded-xl bg-canvas p-4">
-              <p className="text-xs text-ink2-muted">
-                Closed
-              </p>
-
-              <p className="mt-1 text-xl font-bold text-success">
-                {metrics.closed}
-              </p>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      {/* PLANT PERFORMANCE */}
-      <section className="mt-5 rounded-2xl border border-line bg-surface p-5 shadow-xs">
-        <SectionHeader
-          title="Plant Performance"
-          description="Audit activity and observation status by plant."
-        />
-
-        {plantPerformance.length === 0 ? (
-          <EmptyState text="No plant performance data available for the selected filters." />
-        ) : (
-          <div className="space-y-3">
-            {plantPerformance.map(
-              (plant) => (
+            <SectionHeader
+              title="Recent Audit Reports"
+              description="Open, review or export audit reports."
+              action={
                 <button
-                  key={plant.id}
                   type="button"
                   onClick={() =>
                     navigate(
-                      `/admin/zones?plant_id=${plant.id}`
+                      "/admin/audits"
                     )
                   }
-                  className="w-full rounded-xl border border-line bg-canvas/40 p-4 text-left transition-colors hover:border-brand/30 hover:bg-canvas"
+                  className="text-[10px] font-bold text-[#356d8c] hover:underline"
                 >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-bold text-ink2">
-                          {plant.name}
-                        </span>
-
-                        {plant.code && (
-                          <span className="rounded-md bg-surface px-2 py-0.5 text-[10px] font-semibold text-ink2-muted">
-                            {plant.code}
-                          </span>
-                        )}
-                      </div>
-
-                      <p className="mt-1 text-xs text-ink2-secondary">
-                        {plant.auditCount} audits ·{' '}
-                        {plant.observationCount} observations ·{' '}
-                        {plant.highObservationCount} high severity
-                      </p>
-                    </div>
-
-                    <div className="w-full sm:w-56">
-                      <div className="mb-1 flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-ink2-muted">
-                          Submitted
-                        </span>
-
-                        <span className="text-xs font-bold text-ink2">
-                          {plant.submittedCount}
-                        </span>
-                      </div>
-
-                      <div className="h-2 overflow-hidden rounded-full bg-canvas">
-                        <div
-                          className="h-full rounded-full bg-brand"
-                          style={{
-                            width: `${
-                              plant.auditCount
-                                ? Math.min(
-                                    100,
-                                    (plant.submittedCount /
-                                      plant.auditCount) *
-                                      100
-                                  )
-                                : 0
-                            }%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                  </div>
+                  View All Audits →
                 </button>
-              )
-            )}
+              }
+            />
+
           </div>
-        )}
-      </section>
 
-      {/* RECENT AUDITS */}
-      <section className="mt-5 rounded-2xl border border-line bg-surface p-5 shadow-xs">
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <SectionHeader
-            title="Recent Audit Reports"
-            description="Open an audit to view its complete report and observations."
-          />
+          {filteredAudits.length ===
+          0 ? (
+            <div className="p-4">
+              <EmptyState
+                icon={
+                  <ReportIcon />
+                }
+                text="No audits match the selected filters."
+              />
+            </div>
+          ) : (
 
-          <button
-            type="button"
-            onClick={() =>
-              navigate('/admin/audits')
-            }
-            className="text-sm font-semibold text-brand hover:underline"
-          >
-            View All Audits →
-          </button>
-        </div>
+            <div className="divide-y divide-[#edf1f3]">
 
-        {filteredAudits.length === 0 ? (
-          <EmptyState text="No audits match the selected filters." />
-        ) : (
-          <div className="space-y-3">
-            {filteredAudits
-              .slice(0, 8)
-              .map((audit) => {
-                const zone =
-                  zoneMap[audit.zone_id] ||
-                  audit.zone
+              {filteredAudits
+                .slice(0, 8)
+                .map((audit) => {
+                  const zone =
+                    zoneMap[
+                      String(
+                        audit.zone_id
+                      )
+                    ] ||
+                    audit.zone;
 
-                const plant =
-                  zone?.plant ||
-                  plants.find(
-                    (item) =>
-                      item.id ===
-                      zone?.plant_id
-                  )
+                  const plant =
+                    zone?.plant ||
+                    plants.find(
+                      (item) =>
+                        String(
+                          item.id
+                        ) ===
+                        String(
+                          zone?.plant_id
+                        )
+                    );
 
-                return (
-                  <div
-                    key={audit.id}
-                    className="rounded-xl border border-line p-4 transition-colors hover:bg-canvas/50"
-                  >
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  return (
+                    <div
+                      key={
+                        audit.id
+                      }
+                      className="group px-4 py-4 transition hover:bg-[#fbfcfd] sm:px-5"
+                    >
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate(
-                            `/admin/audits/${audit.id}`
-                          )
-                        }
-                        className="min-w-0 text-left"
-                      >
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-bold text-brand">
-                            {audit.audit_number}
-                          </span>
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
-                          <StatusBadge
-                            status={
-                              audit.status
-                            }
-                          />
-                        </div>
-
-                        <p className="mt-1 text-sm font-medium text-ink2">
-                          {plant?.name ||
-                            'Plant not assigned'}
-                          {' · '}
-                          {zone?.name ||
-                            'Zone not assigned'}
-                        </p>
-
-                        <p className="mt-1 text-xs text-ink2-muted">
-                          Audit Date:{' '}
-                          {formatDate(
-                            audit.audit_date
-                          )}
-                          {' · '}
-                          {audit.total_observations ||
-                            0}{' '}
-                          observations
-                        </p>
-                      </button>
-
-                      <div className="flex flex-wrap items-center gap-2">
-
-                        {['HIGH', 'MEDIUM', 'LOW'].map(
-                          (severity) => {
-                            const count =
-                              Number(
-                                audit[
-                                  `${severity.toLowerCase()}_observations`
-                                ] || 0
-                              )
-
-                            if (!count) {
-                              return null
-                            }
-
-                            return (
-                              <span
-                                key={severity}
-                                className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${SEVERITY_META[severity].className}`}
-                              >
-                                {SEVERITY_META[severity].label}:{' '}
-                                {count}
-                              </span>
-                            )
-                          }
-                        )}
+                        {/* AUDIT INFO */}
 
                         <button
                           type="button"
@@ -1364,124 +2247,257 @@ export default function AdminReportsPage() {
                               `/admin/audits/${audit.id}`
                             )
                           }
-                          className="rounded-lg border border-line-strong px-3 py-2 text-xs font-semibold text-ink2 hover:bg-canvas"
+                          className="flex min-w-0 items-start gap-3 text-left"
                         >
-                          View
+
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#eef5f9] text-[#47748d]">
+                            <ReportIcon
+                              size={17}
+                            />
+                          </div>
+
+                          <div className="min-w-0">
+
+                            <div className="flex flex-wrap items-center gap-2">
+
+                              <span className="text-[11px] font-bold text-[#315d77]">
+                                {
+                                  audit.audit_number
+                                }
+                              </span>
+
+                              <StatusBadge
+                                status={
+                                  audit.status
+                                }
+                              />
+
+                            </div>
+
+                            <p className="mt-1.5 truncate text-[10px] font-semibold text-[#536a76]">
+                              {plant?.name ||
+                                "Plant not assigned"}
+                              {" · "}
+                              {zone?.name ||
+                                "Zone not assigned"}
+                            </p>
+
+                            <p className="mt-1 text-[9px] text-[#8b9aa3]">
+                              Audit Date:{" "}
+                              {formatDate(
+                                audit.audit_date
+                              )}
+                              {" · "}
+                              {
+                                audit.total_observations ||
+                                0
+                              }{" "}
+                              observations
+                            </p>
+
+                          </div>
+
                         </button>
 
-                        <button
-                          type="button"
-                          disabled={
-                            exporting ===
+                        {/* ACTIONS */}
+
+                        <div className="flex flex-wrap items-center gap-2 pl-12 lg:pl-0">
+
+                          <SeverityBadge
+                            severity="HIGH"
+                            count={Number(
+                              audit.high_observations ||
+                                0
+                            )}
+                          />
+
+                          <SeverityBadge
+                            severity="MEDIUM"
+                            count={Number(
+                              audit.medium_observations ||
+                                0
+                            )}
+                          />
+
+                          <SeverityBadge
+                            severity="LOW"
+                            count={Number(
+                              audit.low_observations ||
+                                0
+                            )}
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigate(
+                                `/admin/audits/${audit.id}`
+                              )
+                            }
+                            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#d5e0e6] bg-white px-3 text-[9px] font-bold text-[#607480] transition hover:bg-[#f6f9fa]"
+                          >
+                            View
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={
+                              exporting ===
+                              `${audit.id}-excel`
+                            }
+                            onClick={() =>
+                              exportAudit(
+                                audit.id,
+                                "excel"
+                              )
+                            }
+                            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#d5e0e6] bg-white px-3 text-[9px] font-bold text-[#607480] transition hover:bg-[#f6f9fa] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <DownloadIcon />
+
+                            {exporting ===
                             `${audit.id}-excel`
-                          }
-                          onClick={() =>
-                            exportAudit(
-                              audit.id,
-                              'excel'
-                            )
-                          }
-                          className="rounded-lg border border-line-strong px-3 py-2 text-xs font-semibold text-ink2 hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {exporting ===
-                          `${audit.id}-excel`
-                            ? 'Exporting...'
-                            : 'Excel'}
-                        </button>
+                              ? "Exporting..."
+                              : "Excel"}
+                          </button>
 
-                        <button
-                          type="button"
-                          disabled={
-                            exporting ===
+                          <button
+                            type="button"
+                            disabled={
+                              exporting ===
+                              `${audit.id}-pdf`
+                            }
+                            onClick={() =>
+                              exportAudit(
+                                audit.id,
+                                "pdf"
+                              )
+                            }
+                            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#315f79] px-3 text-[9px] font-bold text-white transition hover:bg-[#274f66] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <DownloadIcon />
+
+                            {exporting ===
                             `${audit.id}-pdf`
-                          }
-                          onClick={() =>
-                            exportAudit(
-                              audit.id,
-                              'pdf'
-                            )
-                          }
-                          className="rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {exporting ===
-                          `${audit.id}-pdf`
-                            ? 'Exporting...'
-                            : 'PDF'}
-                        </button>
+                              ? "Exporting..."
+                              : "PDF"}
+                          </button>
+
+                        </div>
 
                       </div>
+
                     </div>
-                  </div>
-                )
-              })}
-          </div>
-        )}
-      </section>
+                  );
+                })}
 
-      {/* QUICK ACCESS */}
-      <section className="mt-5 grid gap-3 sm:grid-cols-3">
+            </div>
+          )}
 
-        <button
-          type="button"
-          onClick={() =>
-            navigate('/admin/plants')
-          }
-          className="rounded-2xl border border-line bg-surface p-5 text-left shadow-xs transition-all hover:-translate-y-0.5 hover:border-brand/30"
-        >
-          <p className="text-sm font-bold text-ink2">
-            Plant Management
-          </p>
+        </section>
 
-          <p className="mt-1 text-xs text-ink2-secondary">
-            View and manage all plants.
-          </p>
+        {/* ====================================================
+            QUICK ACCESS
+        ==================================================== */}
 
-          <span className="mt-4 inline-block text-xs font-bold text-brand">
-            Open Plants →
-          </span>
-        </button>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
 
-        <button
-          type="button"
-          onClick={() =>
-            navigate('/admin/zones')
-          }
-          className="rounded-2xl border border-line bg-surface p-5 text-left shadow-xs transition-all hover:-translate-y-0.5 hover:border-brand/30"
-        >
-          <p className="text-sm font-bold text-ink2">
-            Zone Management
-          </p>
+          <button
+            type="button"
+            onClick={() =>
+              navigate(
+                "/admin/plants"
+              )
+            }
+            className="group rounded-xl border border-[#dfe7ec] bg-white p-5 text-left shadow-[0_1px_2px_rgba(25,55,72,0.025)] transition hover:-translate-y-0.5 hover:border-[#c6d8e2] hover:shadow-[0_5px_18px_rgba(25,55,72,0.05)]"
+          >
 
-          <p className="mt-1 text-xs text-ink2-secondary">
-            Explore plant-wise zones.
-          </p>
+            <div className="flex items-center justify-between">
 
-          <span className="mt-4 inline-block text-xs font-bold text-brand">
-            Open Zones →
-          </span>
-        </button>
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#eef5f9] text-[#47748d]">
+                <BuildingIcon />
+              </div>
 
-        <button
-          type="button"
-          onClick={() =>
-            navigate('/admin/audits')
-          }
-          className="rounded-2xl border border-line bg-surface p-5 text-left shadow-xs transition-all hover:-translate-y-0.5 hover:border-brand/30"
-        >
-          <p className="text-sm font-bold text-ink2">
-            Audit Management
-          </p>
+              <ArrowRightIcon />
 
-          <p className="mt-1 text-xs text-ink2-secondary">
-            Search and manage all audits.
-          </p>
+            </div>
 
-          <span className="mt-4 inline-block text-xs font-bold text-brand">
-            Open Audits →
-          </span>
-        </button>
+            <p className="mt-4 text-[12px] font-bold text-[#304856]">
+              Plant Management
+            </p>
 
-      </section>
+            <p className="mt-1 text-[10px] leading-5 text-[#8998a1]">
+              View and manage plant
+              structures.
+            </p>
+
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              navigate(
+                "/admin/zones"
+              )
+            }
+            className="group rounded-xl border border-[#dfe7ec] bg-white p-5 text-left shadow-[0_1px_2px_rgba(25,55,72,0.025)] transition hover:-translate-y-0.5 hover:border-[#c6d8e2] hover:shadow-[0_5px_18px_rgba(25,55,72,0.05)]"
+          >
+
+            <div className="flex items-center justify-between">
+
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#eef5f9] text-[#47748d]">
+                <ReportIcon />
+              </div>
+
+              <ArrowRightIcon />
+
+            </div>
+
+            <p className="mt-4 text-[12px] font-bold text-[#304856]">
+              Zone Management
+            </p>
+
+            <p className="mt-1 text-[10px] leading-5 text-[#8998a1]">
+              Explore plant-wise zones
+              and activity.
+            </p>
+
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              navigate(
+                "/admin/audits"
+              )
+            }
+            className="group rounded-xl border border-[#dfe7ec] bg-white p-5 text-left shadow-[0_1px_2px_rgba(25,55,72,0.025)] transition hover:-translate-y-0.5 hover:border-[#c6d8e2] hover:shadow-[0_5px_18px_rgba(25,55,72,0.05)]"
+          >
+
+            <div className="flex items-center justify-between">
+
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#eef5f9] text-[#47748d]">
+                <ReportIcon />
+              </div>
+
+              <ArrowRightIcon />
+
+            </div>
+
+            <p className="mt-4 text-[12px] font-bold text-[#304856]">
+              Audit Management
+            </p>
+
+            <p className="mt-1 text-[10px] leading-5 text-[#8998a1]">
+              Search and manage all
+              audit records.
+            </p>
+
+          </button>
+
+        </div>
+
+      </div>
     </div>
-  )
+  );
 }

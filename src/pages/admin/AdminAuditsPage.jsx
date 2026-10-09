@@ -88,24 +88,26 @@ function getAuditPriority(audit) {
 
 
 function sortAudits(audits) {
-  return [...audits].sort(
-    (a, b) => {
-      const priorityDifference =
-        getAuditPriority(a) -
-        getAuditPriority(b);
+  return [...audits].sort((a, b) => {
+    // The most recently active audit must determine the plant/zone card status.
+    // Do not force IN_PROGRESS audits ahead of newer SUBMITTED audits.
+    const activityDifference =
+      getAuditActivityDate(b) - getAuditActivityDate(a);
 
-      if (
-        priorityDifference !== 0
-      ) {
-        return priorityDifference;
-      }
-
-      return (
-        getAuditActivityDate(b) -
-        getAuditActivityDate(a)
-      );
+    if (activityDifference !== 0) {
+      return activityDifference;
     }
-  );
+
+    // If activity timestamps match, use status only as a tie-breaker.
+    const priorityDifference =
+      getAuditPriority(a) - getAuditPriority(b);
+
+    if (priorityDifference !== 0) {
+      return priorityDifference;
+    }
+
+    return 0;
+  });
 }
 
 

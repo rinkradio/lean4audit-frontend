@@ -16,19 +16,195 @@ import { useToast } from '../../hooks/useToast'
 
 const PAGE_SIZE = 10
 
+// ---------------------------------------------------------
+// HELPERS
+// ---------------------------------------------------------
+
 function formatDate(value) {
   if (!value) return '—'
 
   return new Date(value).toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
-    year: '2-digit',
+    year: 'numeric',
   })
 }
 
+function getInitials(name = '') {
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+
+  if (!parts.length) return 'LC'
+
+  return parts
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join('')
+    .toUpperCase()
+}
+
+// ---------------------------------------------------------
+// ICONS
+// ---------------------------------------------------------
+
+function SearchIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-[17px] w-[17px]"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-4-4" />
+    </svg>
+  )
+}
+
+function UserPlusIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-[17px] w-[17px]"
+    >
+      <path d="M15 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="8.5" cy="7" r="4" />
+      <path d="M19 8v6" />
+      <path d="M22 11h-6" />
+    </svg>
+  )
+}
+
+function UsersIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-[19px] w-[19px]"
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  )
+}
+
+function BuildingIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-[15px] w-[15px]"
+    >
+      <path d="M3 21h18" />
+      <path d="M5 21V5l7-3v19" />
+      <path d="M12 21V8l7-3v16" />
+      <path d="M8 7h1" />
+      <path d="M8 11h1" />
+      <path d="M8 15h1" />
+      <path d="M15 10h1" />
+      <path d="M15 14h1" />
+      <path d="M15 18h1" />
+    </svg>
+  )
+}
+
+function ZoneIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-[15px] w-[15px]"
+    >
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
+    </svg>
+  )
+}
+
+function RefreshIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-[15px] w-[15px]"
+    >
+      <path d="M20 11a8.1 8.1 0 0 0-15.5-2" />
+      <path d="M4 5v4h4" />
+      <path d="M4 13a8.1 8.1 0 0 0 15.5 2" />
+      <path d="M20 19v-4h-4" />
+    </svg>
+  )
+}
+
+function ChevronLeftIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-4 w-4"
+    >
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  )
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-4 w-4"
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  )
+}
+
+// ---------------------------------------------------------
+// ACCESS BADGES
+// ---------------------------------------------------------
+
 function AccessBadge({ children }) {
   return (
-    <span className="inline-flex items-center rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-semibold text-brand">
+    <span className="inline-flex max-w-full items-center rounded-md border border-[#d8e4eb] bg-[#f4f8fa] px-2 py-1 text-[11px] font-semibold leading-4 text-[#31566e]">
       {children}
     </span>
   )
@@ -37,7 +213,7 @@ function AccessBadge({ children }) {
 function AccessList({ items = [], emptyText = 'None' }) {
   if (!items?.length) {
     return (
-      <span className="text-xs text-ink2-muted">
+      <span className="text-[11px] font-medium text-[#8b99a2]">
         {emptyText}
       </span>
     )
@@ -55,6 +231,22 @@ function AccessList({ items = [], emptyText = 'None' }) {
   )
 }
 
+// ---------------------------------------------------------
+// CONSULTANT AVATAR
+// ---------------------------------------------------------
+
+function ConsultantAvatar({ name }) {
+  return (
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#d7e4eb] bg-[#eef5f9] text-[11px] font-bold tracking-wide text-[#35627e]">
+      {getInitials(name)}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------
+// MAIN PAGE
+// ---------------------------------------------------------
+
 export default function ConsultantsListPage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
@@ -65,9 +257,11 @@ export default function ConsultantsListPage() {
   const [page, setPage] = useState(1)
 
   const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] =
+    useState('')
 
-  const [statusFilter, setStatusFilter] = useState('')
+  const [statusFilter, setStatusFilter] =
+    useState('')
 
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
@@ -84,9 +278,9 @@ export default function ConsultantsListPage() {
   const [isStatusSubmitting, setIsStatusSubmitting] =
     useState(false)
 
-  // ---------------------------------------------------------
+  // -------------------------------------------------------
   // SEARCH DEBOUNCE
-  // ---------------------------------------------------------
+  // -------------------------------------------------------
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -96,17 +290,17 @@ export default function ConsultantsListPage() {
     return () => clearTimeout(timer)
   }, [search])
 
-  // ---------------------------------------------------------
+  // -------------------------------------------------------
   // RESET PAGE WHEN FILTER CHANGES
-  // ---------------------------------------------------------
+  // -------------------------------------------------------
 
   useEffect(() => {
     setPage(1)
   }, [debouncedSearch, statusFilter])
 
-  // ---------------------------------------------------------
+  // -------------------------------------------------------
   // LOAD CONSULTANTS
-  // ---------------------------------------------------------
+  // -------------------------------------------------------
 
   const loadConsultants = useCallback(async () => {
     setIsLoading(true)
@@ -144,9 +338,9 @@ export default function ConsultantsListPage() {
     loadConsultants()
   }, [loadConsultants])
 
-  // ---------------------------------------------------------
+  // -------------------------------------------------------
   // STATUS CHANGE
-  // ---------------------------------------------------------
+  // -------------------------------------------------------
 
   async function confirmStatusChange() {
     if (!statusConfirm) return
@@ -183,9 +377,9 @@ export default function ConsultantsListPage() {
     }
   }
 
-  // ---------------------------------------------------------
-  // ACTIONS
-  // ---------------------------------------------------------
+  // -------------------------------------------------------
+  // ROW ACTIONS
+  // -------------------------------------------------------
 
   function rowActions(consultant) {
     return [
@@ -232,6 +426,10 @@ export default function ConsultantsListPage() {
     ]
   }
 
+  // -------------------------------------------------------
+  // DERIVED VALUES
+  // -------------------------------------------------------
+
   const totalPages = Math.max(
     1,
     Math.ceil(total / PAGE_SIZE)
@@ -241,528 +439,915 @@ export default function ConsultantsListPage() {
     debouncedSearch || statusFilter
   )
 
-  // ---------------------------------------------------------
+  const activeCount = consultants.filter(
+    (consultant) => consultant.is_active
+  ).length
+
+  const inactiveCount =
+    consultants.length - activeCount
+
+  const firstResult =
+    total === 0
+      ? 0
+      : (page - 1) * PAGE_SIZE + 1
+
+  const lastResult =
+    Math.min(page * PAGE_SIZE, total)
+
+  // -------------------------------------------------------
   // RENDER
-  // ---------------------------------------------------------
+  // -------------------------------------------------------
 
   return (
-    <div className="mx-auto max-w-7xl animate-fade-in">
+    <div className="min-h-full w-full bg-[#f4f7f9]">
 
-      {/* HEADER */}
+      <div className="mx-auto w-full max-w-[1480px] px-5 py-6 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
 
-      <div className="mb-6 flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-ink2 sm:text-[1.75rem]">
-          Lean Consultants
-        </h1>
+        {/* =================================================
+            PAGE HEADER
+        ================================================= */}
 
-        <p className="text-sm text-ink2-secondary">
-          Manage consultants responsible for conducting
-          plant audits and Lean assessments.
-        </p>
-      </div>
+        <div className="mb-7">
 
-      {/* FILTERS */}
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
 
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="mb-2.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#80919d]">
+                <span>
+                  Administration
+                </span>
 
-          {/* SEARCH */}
+                <span className="text-[#b6c2c9]">
+                  /
+                </span>
 
-          <div className="relative">
-            <svg
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink2-muted"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            >
-              <circle
-                cx="11"
-                cy="11"
-                r="7"
-              />
+                <span className="text-[#3d6d8a]">
+                  People &amp; Access
+                </span>
+              </div>
 
-              <path d="m21 21-4.35-4.35" />
-            </svg>
+              <h1 className="text-[28px] font-bold tracking-[-0.035em] text-[#172d3d] sm:text-[31px]">
+                Lean Consultants
+              </h1>
 
-            <input
-              type="text"
-              className="w-full rounded-md border border-line-strong bg-surface py-2.5 pl-9 pr-3.5 text-sm text-ink2 outline-none transition-colors placeholder:text-ink2-muted focus:border-brand focus:ring-4 focus:ring-brand-soft sm:w-64"
-              placeholder="Search consultants…"
-              value={search}
-              onChange={(event) =>
-                setSearch(event.target.value)
+              <p className="mt-2 max-w-[680px] text-[13px] leading-6 text-[#71828d]">
+                Manage consultants, plant access, zone
+                permissions, and account status from one
+                central workspace.
+              </p>
+
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowCreateDrawer(true)
               }
-            />
-          </div>
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 self-start rounded-lg bg-[#245d80] px-4 text-[13px] font-semibold text-white shadow-[0_1px_2px_rgba(16,42,59,0.14)] transition-colors hover:bg-[#1e4f6d] focus:outline-none focus:ring-4 focus:ring-[#dcebf2] lg:self-auto"
+            >
+              <UserPlusIcon />
+              Add Consultant
+            </button>
 
-          {/* STATUS FILTER */}
-
-          <div className="flex gap-1.5 rounded-md bg-line/50 p-1">
-            {[
-              '',
-              'active',
-              'inactive',
-            ].map((value) => (
-              <button
-                key={value || 'all'}
-                type="button"
-                className={`rounded px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  statusFilter === value
-                    ? 'bg-surface text-ink2 shadow-xs'
-                    : 'text-ink2-secondary hover:text-ink2'
-                }`}
-                onClick={() =>
-                  setStatusFilter(value)
-                }
-              >
-                {value === ''
-                  ? 'All'
-                  : value === 'active'
-                    ? 'Active'
-                    : 'Inactive'}
-              </button>
-            ))}
           </div>
 
         </div>
 
-        {/* ADD CONSULTANT */}
+        {/* =================================================
+            SUMMARY CARDS
+        ================================================= */}
 
-        <button
-          type="button"
-          className="inline-flex items-center justify-center gap-1.5 rounded-md bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-brand-hover"
-          onClick={() =>
-            setShowCreateDrawer(true)
-          }
-        >
-          <span className="text-base leading-none">
-            +
-          </span>
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
 
-          Add Lean Consultant
-        </button>
+          {/* TOTAL */}
 
-      </div>
+          <div className="rounded-xl border border-[#dfe7ec] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(25,55,72,0.03)]">
 
-      {/* TABLE */}
+            <div className="flex items-center justify-between">
 
-      <div className="overflow-hidden rounded-xl border border-line bg-surface shadow-xs">
-
-        {isLoading ? (
-          <SkeletonTable />
-        ) : loadError ? (
-          <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-            <p className="text-sm text-ink2-secondary">
-              {loadError}
-            </p>
-
-            <button
-              type="button"
-              className="rounded-md border border-line-strong px-4 py-2 text-sm font-semibold text-ink2 transition-colors hover:bg-canvas"
-              onClick={loadConsultants}
-            >
-              Retry
-            </button>
-          </div>
-        ) : consultants.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
-
-            {hasFilters ? (
-              <p className="text-sm text-ink2-secondary">
-                No consultants match your search.
-              </p>
-            ) : (
-              <>
-                <h3 className="text-base font-semibold text-ink2">
-                  No Lean Consultants yet
-                </h3>
-
-                <p className="max-w-sm text-sm text-ink2-secondary">
-                  Create your first Lean Consultant to
-                  begin managing your plant audit team.
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#7c8e99]">
+                  Total Consultants
                 </p>
 
-                <button
-                  type="button"
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-brand px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-hover"
-                  onClick={() =>
-                    setShowCreateDrawer(true)
-                  }
-                >
-                  + Add Lean Consultant
-                </button>
-              </>
-            )}
+                <div className="mt-2 flex items-end gap-2">
 
-          </div>
-        ) : (
-          <>
-            {/* DESKTOP TABLE */}
+                  <span className="text-[25px] font-bold tracking-tight text-[#203746]">
+                    {total}
+                  </span>
 
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full min-w-[1100px] text-left text-sm">
+                  <span className="mb-1 text-[11px] font-medium text-[#91a0a9]">
+                    registered
+                  </span>
 
-                <thead>
-                  <tr className="border-b border-line bg-canvas/60 text-xs font-semibold uppercase tracking-wide text-ink2-muted">
+                </div>
+              </div>
 
-                    <th className="px-5 py-3 font-semibold">
-                      Employee ID
-                    </th>
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#eef5f9] text-[#3d6e8d]">
+                <UsersIcon />
+              </div>
 
-                    <th className="px-5 py-3 font-semibold">
-                      Name
-                    </th>
-
-                    <th className="px-5 py-3 font-semibold">
-                      Plant Access
-                    </th>
-
-                    <th className="px-5 py-3 font-semibold">
-                      Zone Access
-                    </th>
-
-                    <th className="px-5 py-3 font-semibold">
-                      Status
-                    </th>
-
-                    <th className="px-5 py-3 font-semibold">
-                      Created
-                    </th>
-
-                    <th className="px-5 py-3 font-semibold">
-                      Last Login
-                    </th>
-
-                    <th
-                      className="px-5 py-3"
-                      aria-label="Actions"
-                    />
-
-                  </tr>
-                </thead>
-
-                <tbody>
-
-                  {consultants.map((consultant) => (
-                    <tr
-                      key={consultant.id}
-                      className="border-b border-line last:border-0 transition-colors hover:bg-canvas/50"
-                    >
-
-                      {/* EMPLOYEE ID */}
-
-                      <td className="px-5 py-3.5">
-                        <button
-                          type="button"
-                          className="font-semibold text-brand transition-colors hover:text-brand-hover hover:underline"
-                          onClick={() =>
-                            navigate(
-                              `/admin/consultants/${consultant.id}`
-                            )
-                          }
-                        >
-                          {consultant.employee_id}
-                        </button>
-                      </td>
-
-                      {/* NAME */}
-
-                      <td className="px-5 py-3.5">
-                        <div className="font-medium text-ink2">
-                          {consultant.full_name}
-                        </div>
-                      </td>
-
-                      {/* PLANTS */}
-
-                      <td className="px-5 py-3.5">
-                        <AccessList
-                          items={
-                            consultant.plants || []
-                          }
-                          emptyText="No Plants"
-                        />
-                      </td>
-
-                      {/* ZONES */}
-
-                      <td className="px-5 py-3.5">
-                        <AccessList
-                          items={
-                            consultant.zones || []
-                          }
-                          emptyText="No Zones"
-                        />
-                      </td>
-
-                      {/* STATUS */}
-
-                      <td className="px-5 py-3.5">
-                        <StatusBadge
-                          isActive={
-                            consultant.is_active
-                          }
-                        />
-                      </td>
-
-                      {/* CREATED */}
-
-                      <td className="px-5 py-3.5 text-ink2-secondary">
-                        {formatDate(
-                          consultant.created_at
-                        )}
-                      </td>
-
-                      {/* LAST LOGIN */}
-
-                      <td className="px-5 py-3.5 text-ink2-secondary">
-                        {formatDate(
-                          consultant.last_login
-                        )}
-                      </td>
-
-                      {/* ACTIONS */}
-
-                      <td className="px-5 py-3.5 text-right">
-                        <RowActionMenu
-                          items={rowActions(
-                            consultant
-                          )}
-                        />
-                      </td>
-
-                    </tr>
-                  ))}
-
-                </tbody>
-              </table>
             </div>
 
-            {/* MOBILE CARDS */}
+          </div>
 
-            <div className="divide-y divide-line md:hidden">
+          {/* ACTIVE */}
 
-              {consultants.map((consultant) => (
-                <div
-                  key={consultant.id}
-                  className="px-4 py-4"
+          <div className="rounded-xl border border-[#dfe7ec] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(25,55,72,0.03)]">
+
+            <div className="flex items-center justify-between">
+
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#7c8e99]">
+                  Active Consultants
+                </p>
+
+                <div className="mt-2 flex items-end gap-2">
+
+                  <span className="text-[25px] font-bold tracking-tight text-[#203746]">
+                    {activeCount}
+                  </span>
+
+                  <span className="mb-1 text-[11px] font-medium text-[#91a0a9]">
+                    on current page
+                  </span>
+
+                </div>
+              </div>
+
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#eef7f1]">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#4a9a6d]" />
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* INACTIVE */}
+
+          <div className="rounded-xl border border-[#dfe7ec] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(25,55,72,0.03)]">
+
+            <div className="flex items-center justify-between">
+
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#7c8e99]">
+                  Inactive Consultants
+                </p>
+
+                <div className="mt-2 flex items-end gap-2">
+
+                  <span className="text-[25px] font-bold tracking-tight text-[#203746]">
+                    {inactiveCount}
+                  </span>
+
+                  <span className="mb-1 text-[11px] font-medium text-[#91a0a9]">
+                    on current page
+                  </span>
+
+                </div>
+              </div>
+
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#f2f4f5]">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#9ba6ad]" />
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* =================================================
+            FILTER TOOLBAR
+        ================================================= */}
+
+        <div className="mb-5 rounded-xl border border-[#dfe7ec] bg-white p-3 shadow-[0_1px_2px_rgba(25,55,72,0.03)]">
+
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+
+              {/* SEARCH */}
+
+              <div className="relative">
+
+                <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#82939e]">
+                  <SearchIcon />
+                </div>
+
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(event) =>
+                    setSearch(event.target.value)
+                  }
+                  placeholder="Search consultants..."
+                  className="h-10 w-full rounded-lg border border-[#d8e2e8] bg-[#fbfcfd] pl-10 pr-4 text-[13px] font-medium text-[#243b4a] outline-none transition focus:border-[#4b7d9b] focus:bg-white focus:ring-4 focus:ring-[#e6f0f5] sm:w-[300px]"
+                />
+
+              </div>
+
+              {/* STATUS */}
+
+              <div className="flex h-10 rounded-lg border border-[#d8e2e8] bg-[#f5f7f8] p-1">
+
+                {[
+                  ['', 'All'],
+                  ['active', 'Active'],
+                  ['inactive', 'Inactive'],
+                ].map(([value, label]) => (
+                  <button
+                    key={value || 'all'}
+                    type="button"
+                    onClick={() =>
+                      setStatusFilter(value)
+                    }
+                    className={`rounded-md px-4 text-[12px] font-bold transition ${
+                      statusFilter === value
+                        ? 'bg-white text-[#244e68] shadow-[0_1px_3px_rgba(25,55,72,0.10)]'
+                        : 'text-[#788993] hover:text-[#29495d]'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+
+              </div>
+
+            </div>
+
+            {/* TOOL ACTIONS */}
+
+            <div className="flex items-center gap-3">
+
+              {hasFilters && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch('')
+                    setStatusFilter('')
+                  }}
+                  className="text-[12px] font-semibold text-[#687b87] transition-colors hover:text-[#245d80]"
                 >
+                  Clear filters
+                </button>
+              )}
 
-                  <div className="flex items-start justify-between gap-3">
+              <button
+                type="button"
+                onClick={loadConsultants}
+                disabled={isLoading}
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#d5e0e6] bg-white px-3.5 text-[12px] font-semibold text-[#566d7a] transition-colors hover:bg-[#f7f9fa] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <RefreshIcon />
+                Refresh
+              </button>
 
-                    <div className="min-w-0">
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* =================================================
+            DIRECTORY CARD
+        ================================================= */}
+
+        <div className="overflow-hidden rounded-xl border border-[#dce5ea] bg-white shadow-[0_2px_5px_rgba(25,55,72,0.035)]">
+
+          {/* DIRECTORY HEADER */}
+
+          <div className="flex flex-col gap-2 border-b border-[#e5ebef] bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+
+            <div>
+
+              <h2 className="text-[13px] font-bold text-[#294151]">
+                Consultant Directory
+              </h2>
+
+              <p className="mt-0.5 text-[11px] text-[#8797a1]">
+                Consultants with assigned plant and
+                zone access
+              </p>
+
+            </div>
+
+            <div className="text-[11px] font-semibold text-[#8797a1]">
+              {total} {total === 1 ? 'record' : 'records'}
+            </div>
+
+          </div>
+
+          {/* =================================================
+              LOADING
+          ================================================= */}
+
+          {isLoading ? (
+            <SkeletonTable />
+          ) : loadError ? (
+
+            /* =================================================
+               ERROR
+            ================================================= */
+
+            <div className="flex min-h-[330px] flex-col items-center justify-center px-6 text-center">
+
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-[#e0e7eb] bg-[#f5f7f8] text-[#71838e]">
+                <RefreshIcon />
+              </div>
+
+              <h3 className="text-sm font-bold text-[#2b4352]">
+                Unable to load consultants
+              </h3>
+
+              <p className="mt-1.5 max-w-sm text-[12px] leading-5 text-[#788993]">
+                {loadError}
+              </p>
+
+              <button
+                type="button"
+                className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg border border-[#d2dee5] bg-white px-4 text-[12px] font-semibold text-[#31566d] transition-colors hover:bg-[#f6f9fa]"
+                onClick={loadConsultants}
+              >
+                <RefreshIcon />
+                Retry
+              </button>
+
+            </div>
+
+          ) : consultants.length === 0 ? (
+
+            /* =================================================
+               EMPTY STATE
+            ================================================= */
+
+            <div className="flex min-h-[330px] flex-col items-center justify-center px-6 text-center">
+
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-[#dfe8ed] bg-[#f2f7fa] text-[#52748a]">
+                <UsersIcon />
+              </div>
+
+              {hasFilters ? (
+                <>
+                  <h3 className="text-sm font-bold text-[#293f4e]">
+                    No matching consultants
+                  </h3>
+
+                  <p className="mt-1.5 max-w-sm text-[12px] leading-5 text-[#788993]">
+                    Try changing your search or status
+                    filter.
+                  </p>
+
+                  <button
+                    type="button"
+                    className="mt-4 text-[12px] font-semibold text-[#2c6687] hover:underline"
+                    onClick={() => {
+                      setSearch('')
+                      setStatusFilter('')
+                    }}
+                  >
+                    Clear filters
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-sm font-bold text-[#293f4e]">
+                    No Lean Consultants yet
+                  </h3>
+
+                  <p className="mt-1.5 max-w-sm text-[12px] leading-5 text-[#788993]">
+                    Create your first Lean Consultant to
+                    begin managing your plant audit team.
+                  </p>
+
+                  <button
+                    type="button"
+                    className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg bg-[#245d80] px-4 text-[12px] font-semibold text-white transition-colors hover:bg-[#1e4f6d]"
+                    onClick={() =>
+                      setShowCreateDrawer(true)
+                    }
+                  >
+                    <UserPlusIcon />
+                    Add Consultant
+                  </button>
+                </>
+              )}
+
+            </div>
+
+          ) : (
+
+            /* =================================================
+               DATA
+            ================================================= */
+
+            <>
+              {/* =============================================
+                  DESKTOP TABLE
+              ============================================= */}
+
+              <div className="hidden overflow-x-auto md:block">
+
+                <table className="w-full min-w-[1080px] table-fixed text-left">
+
+                  <thead>
+                    <tr className="border-b border-[#e1e8ec] bg-[#f8fafb]">
+
+                      <th className="w-[24%] px-5 py-3.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#71838f]">
+                        Consultant
+                      </th>
+
+                      <th className="w-[12%] px-5 py-3.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#71838f]">
+                        Employee ID
+                      </th>
+
+                      <th className="w-[17%] px-5 py-3.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#71838f]">
+                        Plant Access
+                      </th>
+
+                      <th className="w-[16%] px-5 py-3.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#71838f]">
+                        Zone Access
+                      </th>
+
+                      <th className="w-[10%] px-5 py-3.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#71838f]">
+                        Status
+                      </th>
+
+                      <th className="w-[9%] px-5 py-3.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#71838f]">
+                        Created
+                      </th>
+
+                      <th className="w-[9%] px-5 py-3.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#71838f]">
+                        Last Login
+                      </th>
+
+                      <th
+                        className="w-[3%] px-4 py-3.5"
+                        aria-label="Actions"
+                      />
+
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    {consultants.map((consultant) => (
+                      <tr
+                        key={consultant.id}
+                        className="group border-b border-[#edf1f3] transition-colors last:border-0 hover:bg-[#fbfcfd]"
+                      >
+
+                        {/* CONSULTANT */}
+
+                        <td className="px-5 py-4">
+
+                          <button
+                            type="button"
+                            className="flex min-w-0 items-center gap-3 text-left"
+                            onClick={() =>
+                              navigate(
+                                `/admin/consultants/${consultant.id}`
+                              )
+                            }
+                          >
+
+                            <ConsultantAvatar
+                              name={
+                                consultant.full_name
+                              }
+                            />
+
+                            <div className="min-w-0">
+
+                              <div className="truncate text-[13px] font-bold text-[#243b4a] transition-colors group-hover:text-[#245d80]">
+                                {consultant.full_name}
+                              </div>
+
+                              <div className="mt-1 text-[11px] font-medium text-[#87959e]">
+                                Lean Consultant
+                              </div>
+
+                            </div>
+
+                          </button>
+
+                        </td>
+
+                        {/* EMPLOYEE ID */}
+
+                        <td className="px-5 py-4">
+
+                          <button
+                            type="button"
+                            className="rounded text-[12px] font-bold text-[#2d698b] transition-colors hover:text-[#1e4f6d] hover:underline focus:outline-none"
+                            onClick={() =>
+                              navigate(
+                                `/admin/consultants/${consultant.id}`
+                              )
+                            }
+                          >
+                            {consultant.employee_id}
+                          </button>
+
+                        </td>
+
+                        {/* PLANT ACCESS */}
+
+                        <td className="px-5 py-4">
+
+                          <div className="flex items-start gap-2">
+
+                            <div className="mt-0.5 shrink-0 text-[#78909f]">
+                              <BuildingIcon />
+                            </div>
+
+                            <AccessList
+                              items={
+                                consultant.plants || []
+                              }
+                              emptyText="No Plants"
+                            />
+
+                          </div>
+
+                        </td>
+
+                        {/* ZONE ACCESS */}
+
+                        <td className="px-5 py-4">
+
+                          <div className="flex items-start gap-2">
+
+                            <div className="mt-0.5 shrink-0 text-[#78909f]">
+                              <ZoneIcon />
+                            </div>
+
+                            <AccessList
+                              items={
+                                consultant.zones || []
+                              }
+                              emptyText="No Zones"
+                            />
+
+                          </div>
+
+                        </td>
+
+                        {/* STATUS */}
+
+                        <td className="px-5 py-4">
+
+                          <StatusBadge
+                            isActive={
+                              consultant.is_active
+                            }
+                          />
+
+                        </td>
+
+                        {/* CREATED */}
+
+                        <td className="whitespace-nowrap px-5 py-4 text-[11px] font-medium text-[#71828d]">
+                          {formatDate(
+                            consultant.created_at
+                          )}
+                        </td>
+
+                        {/* LAST LOGIN */}
+
+                        <td className="whitespace-nowrap px-5 py-4 text-[11px] font-medium text-[#71828d]">
+                          {formatDate(
+                            consultant.last_login
+                          )}
+                        </td>
+
+                        {/* ACTIONS */}
+
+                        <td className="px-4 py-4 text-right">
+
+                          <RowActionMenu
+                            items={rowActions(
+                              consultant
+                            )}
+                          />
+
+                        </td>
+
+                      </tr>
+                    ))}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
+              {/* =============================================
+                  MOBILE CARDS
+              ============================================= */}
+
+              <div className="divide-y divide-[#e8edf0] md:hidden">
+
+                {consultants.map((consultant) => (
+                  <div
+                    key={consultant.id}
+                    className="p-4"
+                  >
+
+                    <div className="flex items-start justify-between gap-3">
 
                       <button
                         type="button"
-                        className="text-left text-sm font-semibold text-brand hover:underline"
+                        className="flex min-w-0 items-center gap-3 text-left"
                         onClick={() =>
                           navigate(
                             `/admin/consultants/${consultant.id}`
                           )
                         }
                       >
-                        {consultant.employee_id}
-                      </button>
 
-                      <div className="mt-0.5 truncate text-sm text-ink2">
-                        {consultant.full_name}
-                      </div>
-
-                      <div className="mt-2">
-                        <StatusBadge
-                          isActive={
-                            consultant.is_active
+                        <ConsultantAvatar
+                          name={
+                            consultant.full_name
                           }
                         />
-                      </div>
+
+                        <div className="min-w-0">
+
+                          <div className="truncate text-[13px] font-bold text-[#243b4a]">
+                            {consultant.full_name}
+                          </div>
+
+                          <div className="mt-1 text-[11px] font-semibold text-[#2d698b]">
+                            {consultant.employee_id}
+                          </div>
+
+                        </div>
+
+                      </button>
+
+                      <RowActionMenu
+                        items={rowActions(
+                          consultant
+                        )}
+                      />
 
                     </div>
 
-                    <RowActionMenu
-                      items={rowActions(
-                        consultant
-                      )}
-                    />
+                    <div className="mt-3">
+                      <StatusBadge
+                        isActive={
+                          consultant.is_active
+                        }
+                      />
+                    </div>
 
-                  </div>
+                    {/* PLANT ACCESS */}
 
-                  {/* ACCESS */}
+                    <div className="mt-4 rounded-lg border border-[#e5ebef] bg-[#fafcfd] p-3">
 
-                  <div className="mt-4 space-y-3">
+                      <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#7a8b96]">
 
-                    <div>
-                      <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-ink2-muted">
-                        Plants
+                        <BuildingIcon />
+
+                        Plant Access
+
                       </div>
 
                       <AccessList
                         items={
                           consultant.plants || []
                         }
-                        emptyText="No Plants"
+                        emptyText="No Plants assigned"
                       />
+
                     </div>
 
-                    <div>
-                      <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-ink2-muted">
-                        Zones
+                    {/* ZONE ACCESS */}
+
+                    <div className="mt-2.5 rounded-lg border border-[#e5ebef] bg-[#fafcfd] p-3">
+
+                      <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#7a8b96]">
+
+                        <ZoneIcon />
+
+                        Zone Access
+
                       </div>
 
                       <AccessList
                         items={
                           consultant.zones || []
                         }
-                        emptyText="No Zones"
+                        emptyText="No Zones assigned"
                       />
+
                     </div>
 
-                    <div className="flex flex-wrap gap-3 text-xs text-ink2-muted">
+                    {/* DATES */}
+
+                    <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 border-t border-[#edf0f2] pt-3 text-[11px] font-medium text-[#82909a]">
+
                       <span>
                         Created:{' '}
-                        {formatDate(
-                          consultant.created_at
-                        )}
+                        <strong className="font-semibold text-[#637681]">
+                          {formatDate(
+                            consultant.created_at
+                          )}
+                        </strong>
                       </span>
 
                       <span>
                         Last Login:{' '}
-                        {formatDate(
-                          consultant.last_login
-                        )}
+                        <strong className="font-semibold text-[#637681]">
+                          {formatDate(
+                            consultant.last_login
+                          )}
+                        </strong>
                       </span>
+
                     </div>
 
                   </div>
+                ))}
+
+              </div>
+
+            </>
+          )}
+
+        </div>
+
+        {/* =================================================
+            PAGINATION / RESULT COUNT
+        ================================================= */}
+
+        {!isLoading &&
+          !loadError &&
+          consultants.length > 0 && (
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
+              <div className="text-[11px] font-medium text-[#7d8d97]">
+
+                Showing{' '}
+
+                <span className="font-bold text-[#536873]">
+                  {firstResult}
+                </span>
+
+                {' '}–{' '}
+
+                <span className="font-bold text-[#536873]">
+                  {lastResult}
+                </span>
+
+                {' '}of{' '}
+
+                <span className="font-bold text-[#536873]">
+                  {total}
+                </span>
+
+                {' '}
+                {total === 1
+                  ? 'consultant'
+                  : 'consultants'}
+
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+
+                  <button
+                    type="button"
+                    className="inline-flex h-9 items-center gap-1 rounded-lg border border-[#d6e0e6] bg-white px-3 text-[11px] font-semibold text-[#607480] transition-colors hover:bg-[#f6f9fa] disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled={page <= 1}
+                    onClick={() =>
+                      setPage((current) =>
+                        current - 1
+                      )
+                    }
+                  >
+                    <ChevronLeftIcon />
+                    Previous
+                  </button>
+
+                  <div className="flex h-9 items-center rounded-lg border border-[#d6e0e6] bg-white px-3 text-[11px] font-bold text-[#526975]">
+
+                    Page {page}
+
+                    <span className="mx-1.5 text-[#a0adb5]">
+                      /
+                    </span>
+
+                    {totalPages}
+
+                  </div>
+
+                  <button
+                    type="button"
+                    className="inline-flex h-9 items-center gap-1 rounded-lg border border-[#d6e0e6] bg-white px-3 text-[11px] font-semibold text-[#607480] transition-colors hover:bg-[#f6f9fa] disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled={
+                      page >= totalPages
+                    }
+                    onClick={() =>
+                      setPage((current) =>
+                        current + 1
+                      )
+                    }
+                  >
+                    Next
+                    <ChevronRightIcon />
+                  </button>
 
                 </div>
-              ))}
+              )}
 
             </div>
-          </>
+          )}
+
+        {/* =================================================
+            CREATE DRAWER
+        ================================================= */}
+
+        {showCreateDrawer && (
+          <ConsultantFormDrawer
+            onClose={() =>
+              setShowCreateDrawer(false)
+            }
+            onCreated={() => {
+              setShowCreateDrawer(false)
+
+              showToast(
+                'Lean Consultant created successfully.'
+              )
+
+              setPage(1)
+
+              loadConsultants()
+            }}
+          />
+        )}
+
+        {/* =================================================
+            RESET PASSWORD
+        ================================================= */}
+
+        {resetPasswordFor && (
+          <ResetPasswordDialog
+            consultant={resetPasswordFor}
+            onClose={() =>
+              setResetPasswordFor(null)
+            }
+            onDone={() => {
+              setResetPasswordFor(null)
+
+              showToast(
+                'Password reset successfully.'
+              )
+            }}
+          />
+        )}
+
+        {/* =================================================
+            STATUS CONFIRMATION
+        ================================================= */}
+
+        {statusConfirm && (
+          <ConfirmDialog
+            title={
+              statusConfirm.nextActive
+                ? 'Activate Consultant?'
+                : 'Deactivate Consultant?'
+            }
+            message={
+              statusConfirm.nextActive
+                ? `${statusConfirm.consultant.full_name} (${statusConfirm.consultant.employee_id}) will be able to sign in to the system again.`
+                : `${statusConfirm.consultant.full_name} (${statusConfirm.consultant.employee_id}) will no longer be able to sign in to the system.`
+            }
+            confirmLabel={
+              statusConfirm.nextActive
+                ? 'Activate'
+                : 'Deactivate'
+            }
+            variant={
+              statusConfirm.nextActive
+                ? 'default'
+                : 'danger'
+            }
+            isSubmitting={
+              isStatusSubmitting
+            }
+            onCancel={() =>
+              setStatusConfirm(null)
+            }
+            onConfirm={
+              confirmStatusChange
+            }
+          />
         )}
 
       </div>
-
-      {/* PAGINATION */}
-
-      {!isLoading &&
-        !loadError &&
-        consultants.length > 0 &&
-        totalPages > 1 && (
-          <div className="mt-4 flex items-center justify-center gap-3 text-sm">
-
-            <button
-              type="button"
-              className="rounded-md border border-line-strong px-3.5 py-2 font-medium text-ink2-secondary transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={page <= 1}
-              onClick={() =>
-                setPage((current) =>
-                  current - 1
-                )
-              }
-            >
-              Previous
-            </button>
-
-            <span className="text-ink2-secondary">
-              Page {page} of {totalPages}
-            </span>
-
-            <button
-              type="button"
-              className="rounded-md border border-line-strong px-3.5 py-2 font-medium text-ink2-secondary transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={
-                page >= totalPages
-              }
-              onClick={() =>
-                setPage((current) =>
-                  current + 1
-                )
-              }
-            >
-              Next
-            </button>
-
-          </div>
-        )}
-
-      {/* CREATE DRAWER */}
-
-      {showCreateDrawer && (
-        <ConsultantFormDrawer
-          onClose={() =>
-            setShowCreateDrawer(false)
-          }
-          onCreated={() => {
-            setShowCreateDrawer(false)
-
-            showToast(
-              'Lean Consultant created successfully.'
-            )
-
-            setPage(1)
-
-            loadConsultants()
-          }}
-        />
-      )}
-
-      {/* RESET PASSWORD */}
-
-      {resetPasswordFor && (
-        <ResetPasswordDialog
-          consultant={resetPasswordFor}
-          onClose={() =>
-            setResetPasswordFor(null)
-          }
-          onDone={() => {
-            setResetPasswordFor(null)
-
-            showToast(
-              'Password reset successfully.'
-            )
-          }}
-        />
-      )}
-
-      {/* STATUS CONFIRMATION */}
-
-      {statusConfirm && (
-        <ConfirmDialog
-          title={
-            statusConfirm.nextActive
-              ? 'Activate Consultant?'
-              : 'Deactivate Consultant?'
-          }
-          message={
-            statusConfirm.nextActive
-              ? `${statusConfirm.consultant.full_name} (${statusConfirm.consultant.employee_id}) will be able to sign in to the system again.`
-              : `${statusConfirm.consultant.full_name} (${statusConfirm.consultant.employee_id}) will no longer be able to sign in to the system.`
-          }
-          confirmLabel={
-            statusConfirm.nextActive
-              ? 'Activate'
-              : 'Deactivate'
-          }
-          variant={
-            statusConfirm.nextActive
-              ? 'default'
-              : 'danger'
-          }
-          isSubmitting={
-            isStatusSubmitting
-          }
-          onCancel={() =>
-            setStatusConfirm(null)
-          }
-          onConfirm={
-            confirmStatusChange
-          }
-        />
-      )}
 
     </div>
   )
@@ -774,16 +1359,55 @@ export default function ConsultantsListPage() {
 
 function SkeletonTable() {
   return (
-    <div className="space-y-3 p-5">
+    <div className="overflow-hidden">
 
-      {Array.from({ length: 5 }).map(
-        (_, index) => (
-          <div
-            key={index}
-            className="skeleton h-12 rounded-md"
-          />
-        )
-      )}
+      {/* TABLE HEADER SKELETON */}
+
+      <div className="hidden border-b border-[#e1e8ec] bg-[#f8fafb] px-5 py-4 md:grid md:grid-cols-7 md:gap-5">
+
+        {Array.from({ length: 7 }).map(
+          (_, index) => (
+            <div
+              key={index}
+              className="h-2.5 rounded bg-[#e6ecef]"
+            />
+          )
+        )}
+
+      </div>
+
+      {/* ROWS */}
+
+      <div>
+
+        {Array.from({ length: 5 }).map(
+          (_, index) => (
+            <div
+              key={index}
+              className="flex min-h-[76px] items-center gap-4 border-b border-[#edf1f3] px-5 py-4 last:border-0"
+            >
+
+              <div className="h-9 w-9 shrink-0 rounded-lg bg-[#edf1f3]" />
+
+              <div className="flex-1 space-y-2">
+
+                <div className="h-3 w-32 rounded bg-[#edf1f3]" />
+
+                <div className="h-2.5 w-20 rounded bg-[#f0f3f5]" />
+
+              </div>
+
+              <div className="hidden h-3 w-20 rounded bg-[#edf1f3] sm:block" />
+
+              <div className="hidden h-3 w-24 rounded bg-[#edf1f3] lg:block" />
+
+              <div className="hidden h-6 w-16 rounded-full bg-[#edf1f3] md:block" />
+
+            </div>
+          )
+        )}
+
+      </div>
 
     </div>
   )
