@@ -1,5 +1,5 @@
-import apiClient from './apiClient'
 
+import apiClient from './apiClient'
 
 // ---------------------------------------------------------
 // UPLOAD OBSERVATION EVIDENCE
@@ -10,38 +10,28 @@ export async function uploadObservationEvidence(
   file
 ) {
   if (!observationId) {
-    throw new Error(
-      'Observation ID is required.'
-    )
+    throw new Error('Observation ID is required.')
   }
 
   if (!file) {
-    throw new Error(
-      'Evidence file is required.'
-    )
+    throw new Error('Evidence file is required.')
   }
 
   const formData = new FormData()
 
   formData.append(
     'file',
-    file
+    file,
+    file.name || 'evidence.jpg'
   )
 
   const response = await apiClient.post(
     `/observations/${observationId}/evidence`,
-    formData,
-    {
-      headers: {
-        'Content-Type':
-          'multipart/form-data',
-      },
-    }
+    formData
   )
 
   return response.data
 }
-
 
 // ---------------------------------------------------------
 // FETCH OBSERVATION EVIDENCE
@@ -51,9 +41,7 @@ export async function fetchObservationEvidence(
   observationId
 ) {
   if (!observationId) {
-    throw new Error(
-      'Observation ID is required.'
-    )
+    throw new Error('Observation ID is required.')
   }
 
   const response = await apiClient.get(
@@ -63,7 +51,6 @@ export async function fetchObservationEvidence(
   return response.data
 }
 
-
 // ---------------------------------------------------------
 // FETCH AUTHENTICATED EVIDENCE FILE
 // ---------------------------------------------------------
@@ -72,9 +59,7 @@ export async function fetchObservationEvidenceFile(
   evidenceId
 ) {
   if (!evidenceId) {
-    throw new Error(
-      'Evidence ID is required.'
-    )
+    throw new Error('Evidence ID is required.')
   }
 
   const response = await apiClient.get(
@@ -84,11 +69,8 @@ export async function fetchObservationEvidenceFile(
     }
   )
 
-  return URL.createObjectURL(
-    response.data
-  )
+  return URL.createObjectURL(response.data)
 }
-
 
 // ---------------------------------------------------------
 // DELETE OBSERVATION EVIDENCE
@@ -98,9 +80,7 @@ export async function deleteObservationEvidence(
   evidenceId
 ) {
   if (!evidenceId) {
-    throw new Error(
-      'Evidence ID is required.'
-    )
+    throw new Error('Evidence ID is required.')
   }
 
   await apiClient.delete(
