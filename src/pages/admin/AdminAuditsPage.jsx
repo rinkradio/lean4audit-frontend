@@ -1647,6 +1647,265 @@ export default function AdminAuditsPage() {
           }
         }
 
+
+
+        /* ======================================================
+           MOBILE-FIRST VISUAL REFRESH — STYLING ONLY
+           Keep the existing audit hierarchy and event handlers.
+        ====================================================== */
+        .admin-audits-page {
+          min-height: 100%;
+          padding: clamp(14px, 2.6vw, 30px);
+          background: #f7f9fc;
+          color: #111827;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .admin-audits-container {
+          width: 100%;
+          max-width: 1480px;
+        }
+
+        .audit-page-header {
+          align-items: center;
+          margin-bottom: 22px;
+          padding-bottom: 20px;
+          border-bottom: 1px solid #e8edf4;
+        }
+
+        .audit-eyebrow {
+          margin-bottom: 8px;
+          color: #2563eb;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: .13em;
+        }
+
+        .audit-page-title {
+          font-size: clamp(25px, 3vw, 32px);
+          line-height: 1.15;
+          letter-spacing: -.035em;
+          font-weight: 750;
+        }
+
+        .audit-page-subtitle {
+          max-width: 620px;
+          margin: 8px 0 0;
+          font-size: 13px;
+          line-height: 1.6;
+          color: #64748b;
+        }
+
+        .audit-search {
+          width: min(100%, 360px);
+          min-height: 46px;
+          padding: 0 15px;
+          border: 1px solid #dce3ed;
+          border-radius: 12px;
+          background: #fff;
+          font-size: 14px;
+          box-shadow: 0 1px 2px rgba(15,23,42,.025);
+          transition: border-color .18s ease, box-shadow .18s ease;
+        }
+
+        .audit-search::placeholder { color: #94a3b8; }
+        .audit-search:focus {
+          border-color: #8bb7ff;
+          box-shadow: 0 0 0 4px rgba(37,99,235,.09);
+        }
+
+        .audit-breadcrumb {
+          margin: 0 0 18px;
+          font-size: 12px;
+        }
+
+        .audit-plant-grid,
+        .audit-zone-grid {
+          gap: 14px;
+        }
+
+        .audit-plant-card,
+        .audit-zone-card {
+          min-width: 0;
+          padding: 20px;
+          border: 1px solid #e5eaf2;
+          border-radius: 17px;
+          background: #fff;
+          box-shadow: 0 2px 8px rgba(15,23,42,.025);
+          transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .audit-plant-card:hover,
+        .audit-zone-card:hover {
+          border-color: #bfd5fb;
+          box-shadow: 0 8px 24px rgba(15,23,42,.06);
+          transform: translateY(-1px);
+        }
+
+        .audit-plant-card.ongoing,
+        .audit-zone-card.ongoing {
+          border-color: #b9d2ff;
+          background: linear-gradient(180deg, #fff 0%, #fbfdff 100%);
+        }
+
+        .audit-plant-icon,
+        .audit-zone-icon {
+          flex: 0 0 auto;
+          border: 1px solid #e4edff;
+          background: #f1f6ff;
+          color: #2864d9;
+        }
+
+        .audit-plant-name { font-size: 17px; line-height: 1.4; overflow-wrap: anywhere; }
+        .audit-plant-code { font-size: 11px; color: #8b98ab; }
+        .audit-plant-stats,
+        .audit-zone-card-stats {
+          gap: clamp(16px, 3vw, 30px);
+          flex-wrap: wrap;
+        }
+
+        .audit-stat-value { font-size: 20px; font-weight: 750; }
+        .audit-stat-label { font-size: 11px; color: #7b8798; }
+
+        .audit-latest-box {
+          border-color: #e9eef5;
+          border-radius: 11px;
+          background: #f8fafc;
+          padding: 12px;
+        }
+        .audit-latest-label { font-size: 10px; color: #7b8798; }
+        .audit-latest-number { font-size: 12px; overflow-wrap: anywhere; }
+        .audit-latest-zone { font-size: 11px; }
+
+        .audit-active-pill,
+        .audit-new-pill {
+          max-width: 100%;
+          padding: 6px 9px;
+          font-size: 10px;
+          line-height: 1.2;
+          white-space: normal;
+        }
+
+        .audit-zone-header {
+          padding: 16px;
+          margin-bottom: 16px;
+          border: 1px solid #e8edf4;
+          border-radius: 15px;
+          background: #fff;
+        }
+
+        .audit-zone-heading { min-width: 0; }
+        .audit-zone-title { font-size: 19px; line-height: 1.35; overflow-wrap: anywhere; }
+        .audit-zone-subtitle { font-size: 12px; line-height: 1.5; }
+
+        .audit-back-button {
+          flex: 0 0 auto;
+          width: 42px;
+          height: 42px;
+          border-color: #dbe3ef;
+          border-radius: 12px;
+          color: #334155;
+          font-size: 16px;
+        }
+
+        .audit-audit-list {
+          border-color: #e5eaf2;
+          border-radius: 16px;
+          box-shadow: 0 2px 8px rgba(15,23,42,.025);
+        }
+
+        .audit-list-header {
+          gap: 12px;
+          padding: 18px 20px;
+          background: #fff;
+          border-bottom: 1px solid #edf1f6;
+        }
+
+        .audit-list-title { font-size: 16px; font-weight: 750; }
+        .audit-list-subtitle { margin-top: 4px; font-size: 12px; line-height: 1.5; color: #718096; }
+        .audit-list-count { font-size: 11px; }
+
+        .audit-items { padding: 0 16px; }
+        .audit-item {
+          min-width: 0;
+          gap: 14px;
+          padding: 17px 4px;
+          border-bottom-color: #edf1f6;
+        }
+        .audit-item:last-child { border-bottom: 0; }
+        .audit-number { font-size: 13px; font-weight: 750; overflow-wrap: anywhere; }
+        .audit-number-row { min-width: 0; gap: 8px; flex-wrap: wrap; }
+        .audit-info-label { font-size: 10px; color: #8a96a8; }
+        .audit-info-value { font-size: 12px; color: #334155; overflow-wrap: anywhere; }
+
+        .audit-empty,
+        .audit-error-page {
+          border: 1px dashed #d8e1ed;
+          border-radius: 16px;
+          background: #fff;
+          padding: 36px 20px;
+        }
+        .audit-empty-title { font-size: 16px; font-weight: 750; }
+        .audit-empty-text { max-width: 340px; margin: 6px auto 0; font-size: 12px; line-height: 1.6; }
+
+        .audit-retry-button {
+          min-height: 42px;
+          padding: 0 16px;
+          border-radius: 11px;
+          font-size: 13px;
+        }
+
+        @media (max-width: 750px) {
+          .admin-audits-page { padding: 14px; }
+          .audit-page-header {
+            align-items: stretch;
+            gap: 14px;
+            margin-bottom: 18px;
+            padding-bottom: 18px;
+          }
+          .audit-page-title { font-size: 27px; }
+          .audit-page-subtitle { font-size: 13px; }
+          .audit-search { width: 100%; min-height: 48px; font-size: 14px; }
+          .audit-plant-grid,
+          .audit-zone-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+          .audit-plant-card,
+          .audit-zone-card { min-height: 0; padding: 17px; border-radius: 15px; }
+          .audit-plant-name { margin-top: 14px; font-size: 16px; }
+          .audit-plant-stats { margin-top: 17px; gap: 24px; }
+          .audit-card-arrow { right: 17px; bottom: 17px; }
+          .audit-zone-header { align-items: stretch; padding: 13px; }
+          .audit-zone-heading { align-items: flex-start; gap: 10px; }
+          .audit-zone-title { font-size: 17px; }
+          .audit-zone-card-stats { gap: 22px; margin-top: 16px; }
+          .audit-list-header { align-items: flex-start; padding: 15px; }
+          .audit-items { padding: 0 13px; }
+          .audit-item { grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; padding: 15px 0; }
+          .audit-item > :nth-child(3),
+          .audit-item > :nth-child(4) { display: none; }
+          .audit-number { font-size: 12px; }
+          .audit-info-value { font-size: 12px; }
+          .audit-breadcrumb { margin-bottom: 14px; }
+        }
+
+        @media (max-width: 380px) {
+          .admin-audits-page { padding: 10px; }
+          .audit-plant-card,
+          .audit-zone-card { padding: 14px; }
+          .audit-card-top { gap: 8px; }
+          .audit-card-top-badges { gap: 5px; }
+          .audit-plant-stats,
+          .audit-zone-card-stats { gap: 16px; }
+          .audit-items { padding: 0 10px; }
+          .audit-item { gap: 8px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .audit-plant-card,
+          .audit-zone-card,
+          .audit-search { transition: none; }
+        }
+
       `}</style>
 
 

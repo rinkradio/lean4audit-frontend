@@ -20,39 +20,24 @@ export default function LoginPage() {
 
   function validate() {
     const errors = {}
-
-    if (!employeeId.trim()) {
-      errors.employeeId = 'Employee ID is required.'
-    }
-
-    if (!password) {
-      errors.password = 'Password is required.'
-    }
-
+    if (!employeeId.trim()) errors.employeeId = 'Employee ID is required.'
+    if (!password) errors.password = 'Password is required.'
     setFieldErrors(errors)
     return Object.keys(errors).length === 0
   }
 
   async function handleSubmit(event) {
     event.preventDefault()
-
     if (isSubmitting) return
-
     setFormError('')
-
     if (!validate()) return
 
     setIsSubmitting(true)
-
     try {
       const user = await login(employeeId.trim(), password)
-
-      navigate(ROLE_HOME[user.role] || '/login', {
-        replace: true,
-      })
+      navigate(ROLE_HOME[user.role] || '/login', { replace: true })
     } catch (err) {
       const status = err?.response?.status
-
       if (status === 401) {
         setFormError('Invalid employee ID or password.')
       } else {
@@ -64,431 +49,177 @@ export default function LoginPage() {
   }
 
   const inputBase =
-    'h-[52px] w-full rounded-[8px] border bg-white px-4 text-[14px] font-medium text-[#17212B] outline-none transition-all duration-200 placeholder:text-[#9AA5B1]'
+    'h-12 sm:h-[52px] w-full rounded-xl border bg-white pl-11 pr-4 text-base sm:text-sm text-[#17212B] outline-none transition placeholder:text-[#9AA5B1] focus:ring-4'
 
   return (
-    <main className="min-h-screen bg-[#F3F5F7] text-[#17212B]">
-      <div className="grid min-h-screen lg:grid-cols-[1.08fr_0.92fr]">
+    <main className="min-h-[100svh] bg-[#F8FAFC] text-[#152536] antialiased">
+      <div className="grid min-h-[100svh] lg:grid-cols-[0.92fr_1.08fr]">
+        {/* Brand panel: decorative only; all authentication behavior stays unchanged. */}
+        <aside className="relative hidden overflow-hidden bg-[#F0F6FA] lg:flex lg:min-h-[100svh] lg:flex-col lg:justify-between lg:px-10 lg:py-10 xl:px-16 xl:py-12">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-20 h-80 w-80 rounded-full bg-[#D8EAF5] blur-3xl" />
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 -left-24 h-96 w-96 rounded-full bg-[#E1EEF6] blur-3xl" />
+          <div aria-hidden="true" className="absolute inset-0 opacity-40" style={{ backgroundImage: 'radial-gradient(#A7C5D8 0.8px, transparent 0.8px)', backgroundSize: '22px 22px' }} />
 
-        {/* =========================================================
-            LEFT — BRAND / INDUSTRIAL IDENTITY
-        ========================================================== */}
-        <section className="relative hidden min-h-screen overflow-hidden bg-[#102B43] lg:flex">
-          
-          {/* Subtle industrial grid */}
-          <div
-            className="absolute inset-0 opacity-[0.055]"
-            aria-hidden="true"
-            style={{
-              backgroundImage: `
-                linear-gradient(rgba(255,255,255,0.9) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.9) 1px, transparent 1px)
-              `,
-              backgroundSize: '48px 48px',
-            }}
-          />
+          <Brand dark className="relative z-10" />
 
-          {/* Soft architectural glow */}
-          <div
-            className="absolute -left-40 -top-40 h-[520px] w-[520px] rounded-full bg-[#2D6EA5]/20 blur-3xl"
-            aria-hidden="true"
-          />
-
-          <div
-            className="absolute -bottom-48 right-[-100px] h-[600px] w-[600px] rounded-full bg-[#17496E]/40 blur-3xl"
-            aria-hidden="true"
-          />
-
-          {/* Industrial line structure */}
-          <div
-            className="absolute right-0 top-0 h-full w-[42%] opacity-[0.08]"
-            aria-hidden="true"
-          >
-            <div className="absolute right-[25%] top-0 h-full w-px bg-white" />
-            <div className="absolute right-[55%] top-0 h-full w-px bg-white" />
-            <div className="absolute right-0 top-[26%] h-px w-full bg-white" />
-            <div className="absolute right-0 top-[62%] h-px w-full bg-white" />
-
-            <div className="absolute right-[18%] top-[19%] h-24 w-24 border border-white" />
-            <div className="absolute right-[42%] top-[43%] h-36 w-36 border border-white" />
-            <div className="absolute right-[8%] bottom-[18%] h-28 w-28 border border-white" />
+          <div className="relative z-10 max-w-xl pb-4 xl:pb-10">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#D7E6EF] bg-white/70 px-3.5 py-2 text-xs font-semibold text-[#42647A]">
+              <span className="h-2 w-2 rounded-full bg-[#4B9B78]" />
+              Operational excellence, made practical
+            </div>
+            <h1 className="max-w-lg text-4xl font-semibold leading-[1.12] tracking-[-0.045em] text-[#132B3D] xl:text-[52px]">
+              Better audits.
+              <br />
+              Clearer actions.
+              <br />
+              <span className="text-[#397CA4]">Stronger operations.</span>
+            </h1>
+            <p className="mt-6 max-w-md text-base leading-7 text-[#637B8B]">
+              A focused workspace for plant audits, observations, and continuous improvement.
+            </p>
+            <div className="mt-10 grid max-w-lg grid-cols-3 border-t border-[#D5E4EC] pt-5">
+              <Capability number="01" title="Audits" description="Consistent checks" />
+              <Capability number="02" title="Insights" description="Clear observations" bordered />
+              <Capability number="03" title="Actions" description="Track improvement" bordered />
+            </div>
           </div>
 
-          <div className="relative z-10 flex w-full flex-col justify-between px-12 py-12 xl:px-16 xl:py-14 2xl:px-20">
+          <div className="relative z-10 flex items-center justify-between gap-4 text-xs text-[#8296A3]">
+            <span>© {new Date().getFullYear()} Lean4HR Systems</span>
+            <span className="inline-flex items-center gap-2">
+              <ShieldSmallIcon /> Secure enterprise access
+            </span>
+          </div>
+        </aside>
 
-            {/* Brand */}
-            <div className="animate-[fadeIn_500ms_ease-out]">
-              <div className="flex items-center gap-3">
-                
-                <div className="flex h-11 w-11 items-center justify-center rounded-[9px] border border-white/15 bg-white/[0.07]">
-                  <ShieldIcon />
-                </div>
+        {/* Login area */}
+        <section className="relative flex min-h-[100svh] items-center justify-center overflow-hidden px-5 py-7 sm:px-8 sm:py-10 lg:px-12 xl:px-16">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#E7F2F8] blur-3xl lg:hidden" />
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-[#F0F5F8] blur-3xl lg:hidden" />
 
-                <div>
-                  <div className="text-[20px] font-extrabold tracking-[-0.03em] text-white">
-                    LEAN<span className="text-[#4C8FD0]">4</span>AUDIT
-                  </div>
-
-                  <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
-                    Plant Audit & Continuous Improvement
-                  </div>
-                </div>
-              </div>
+          <div className="relative z-10 w-full max-w-[420px]">
+            <div className="mb-10 lg:hidden">
+              <Brand />
             </div>
 
-            {/* Main message */}
-            <div className="max-w-[590px]">
-
-              <div className="mb-7 flex items-center gap-3">
-                <span className="h-px w-9 bg-[#5B99CA]" />
-                <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#76A8CF]">
-                  Operational Excellence
-                </span>
+            <div className="mb-8">
+              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl border border-[#DCEAF2] bg-[#EDF6FB] text-[#36779E]">
+                <LockIcon />
               </div>
-
-              <h1 className="max-w-[580px] text-[42px] font-semibold leading-[1.08] tracking-[-0.035em] text-white xl:text-[52px]">
-                Build safer,
-                <br />
-                leaner and more
-                <br />
-                efficient plants.
-              </h1>
-
-              <p className="mt-7 max-w-[500px] text-[15px] leading-7 text-white/60">
-                A structured digital platform for plant audits,
-                observations and continuous improvement initiatives.
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-[#57809A]">Welcome to Lean4Audit</p>
+              <h2 className="text-[30px] font-semibold leading-tight tracking-[-0.045em] text-[#172B3A] sm:text-[34px]">
+                Sign in to your account
+              </h2>
+              <p className="mt-3 max-w-sm text-sm leading-6 text-[#718391]">
+                Enter your employee credentials to continue to your workspace.
               </p>
-
-              {/* Capability indicators */}
-              <div className="mt-10 grid max-w-[560px] grid-cols-3 border-y border-white/10">
-
-                <Capability
-                  number="01"
-                  title="Audits"
-                  description="Standardized"
-                />
-
-                <Capability
-                  number="02"
-                  title="Observations"
-                  description="Digital"
-                  bordered
-                />
-
-                <Capability
-                  number="03"
-                  title="Improvement"
-                  description="Action driven"
-                  bordered
-                />
-
-              </div>
             </div>
 
-            {/* Footer */}
-            <div className="flex items-end justify-between gap-8">
+            <form onSubmit={handleSubmit} noValidate className="space-y-5">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/35">
-                  Lean4HR Systems
-                </p>
-                <p className="mt-2 text-xs text-white/30">
-                  Enterprise audit management platform
-                </p>
-              </div>
-
-              <div className="hidden text-right xl:block">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/30">
-                  Secure Environment
-                </p>
-                <div className="mt-2 flex items-center justify-end gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#4FA875]" />
-                  <span className="text-[11px] text-white/35">
-                    System operational
-                  </span>
+                <label htmlFor="employee_id" className="mb-2 block text-sm font-semibold text-[#344B5A]">
+                  Employee ID
+                </label>
+                <div className="relative">
+                  <span className="pointer-events-none absolute inset-y-0 left-0 flex w-11 items-center justify-center text-[#8A9BA7]"><UserIcon /></span>
+                  <input
+                    id="employee_id"
+                    type="text"
+                    value={employeeId}
+                    onChange={(e) => {
+                      setEmployeeId(e.target.value)
+                      if (fieldErrors.employeeId) setFieldErrors((prev) => ({ ...prev, employeeId: '' }))
+                    }}
+                    placeholder="Enter your employee ID"
+                    autoComplete="username"
+                    aria-invalid={Boolean(fieldErrors.employeeId)}
+                    aria-describedby={fieldErrors.employeeId ? 'employee_id-error' : undefined}
+                    className={`${inputBase} ${fieldErrors.employeeId ? 'border-[#C84A42] bg-[#FFF9F8] focus:border-[#C84A42] focus:ring-[#C84A42]/10' : 'border-[#D9E2E8] hover:border-[#B8CAD5] focus:border-[#4D8CAE] focus:ring-[#4D8CAE]/10'}`}
+                  />
                 </div>
-              </div>
-            </div>
-
-          </div>
-        </section>
-
-        {/* =========================================================
-            RIGHT — LOGIN
-        ========================================================== */}
-        <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F3F5F7] px-5 py-10 sm:px-8 lg:px-12">
-
-          {/* Mobile-only subtle background */}
-          <div
-            className="pointer-events-none absolute inset-0 lg:hidden"
-            aria-hidden="true"
-            style={{
-              backgroundImage: `
-                linear-gradient(rgba(16,43,67,0.025) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(16,43,67,0.025) 1px, transparent 1px)
-              `,
-              backgroundSize: '36px 36px',
-            }}
-          />
-
-          <div className="relative z-10 w-full max-w-[440px]">
-
-            {/* Mobile brand */}
-            <div className="mb-9 flex items-center lg:hidden">
-              <div className="flex h-10 w-10 items-center justify-center rounded-[8px] bg-[#102B43]">
-                <ShieldIcon light />
-              </div>
-
-              <div className="ml-3">
-                <div className="text-[18px] font-extrabold tracking-[-0.03em] text-[#102B43]">
-                  LEAN<span className="text-[#2869A0]">4</span>AUDIT
-                </div>
-
-                <div className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#7C8792]">
-                  Plant Audit & Continuous Improvement
-                </div>
-              </div>
-            </div>
-
-            {/* Login card */}
-            <div className="rounded-[14px] border border-[#DCE1E6] bg-white px-6 py-7 shadow-[0_18px_50px_rgba(16,43,67,0.07)] sm:px-9 sm:py-9">
-
-              {/* Card heading */}
-              <div className="mb-8">
-                <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-[7px] bg-[#EDF4FA] text-[#245E8E]">
-                  <LockIcon />
-                </div>
-
-                <h2 className="text-[26px] font-semibold tracking-[-0.025em] text-[#17212B]">
-                  Welcome back
-                </h2>
-
-                <p className="mt-2 text-[13px] leading-5 text-[#71808D]">
-                  Sign in to access your Lean4Audit workspace.
-                </p>
-              </div>
-
-              <form
-                onSubmit={handleSubmit}
-                noValidate
-              >
-
-                {/* Employee ID */}
-                <div className="mb-5">
-                  <label
-                    htmlFor="employee_id"
-                    className="mb-2 block text-[12px] font-bold uppercase tracking-[0.06em] text-[#4B5864]"
-                  >
-                    Employee ID
-                  </label>
-
-                  <div className="relative">
-                    <span className="pointer-events-none absolute inset-y-0 left-0 flex w-11 items-center justify-center text-[#87939E]">
-                      <UserIcon />
-                    </span>
-
-                    <input
-                      id="employee_id"
-                      type="text"
-                      value={employeeId}
-                      onChange={(e) => {
-                        setEmployeeId(e.target.value)
-
-                        if (fieldErrors.employeeId) {
-                          setFieldErrors((prev) => ({
-                            ...prev,
-                            employeeId: '',
-                          }))
-                        }
-                      }}
-                      placeholder="Enter your employee ID"
-                      autoComplete="username"
-                      aria-invalid={Boolean(fieldErrors.employeeId)}
-                      aria-describedby={
-                        fieldErrors.employeeId
-                          ? 'employee_id-error'
-                          : undefined
-                      }
-                      className={`${inputBase} pl-11 ${
-                        fieldErrors.employeeId
-                          ? 'border-[#C84A42] bg-[#FFF9F8] focus:border-[#C84A42] focus:ring-4 focus:ring-[#C84A42]/10'
-                          : 'border-[#CDD5DC] hover:border-[#AEB8C1] focus:border-[#2869A0] focus:ring-4 focus:ring-[#2869A0]/10'
-                      }`}
-                    />
-                  </div>
-
-                  {fieldErrors.employeeId && (
-                    <p
-                      id="employee_id-error"
-                      className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-[#C84A42]"
-                      role="alert"
-                    >
-                      <AlertIcon />
-                      {fieldErrors.employeeId}
-                    </p>
-                  )}
-                </div>
-
-                {/* Password */}
-                <div className="mb-5">
-                  <label
-                    htmlFor="password"
-                    className="mb-2 block text-[12px] font-bold uppercase tracking-[0.06em] text-[#4B5864]"
-                  >
-                    Password
-                  </label>
-
-                  <div className="relative">
-                    <span className="pointer-events-none absolute inset-y-0 left-0 flex w-11 items-center justify-center text-[#87939E]">
-                      <KeyIcon />
-                    </span>
-
-                    <input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value)
-
-                        if (fieldErrors.password) {
-                          setFieldErrors((prev) => ({
-                            ...prev,
-                            password: '',
-                          }))
-                        }
-                      }}
-                      placeholder="Enter your password"
-                      autoComplete="current-password"
-                      aria-invalid={Boolean(fieldErrors.password)}
-                      aria-describedby={
-                        fieldErrors.password
-                          ? 'password-error'
-                          : undefined
-                      }
-                      className={`${inputBase} pl-11 pr-12 ${
-                        fieldErrors.password
-                          ? 'border-[#C84A42] bg-[#FFF9F8] focus:border-[#C84A42] focus:ring-4 focus:ring-[#C84A42]/10'
-                          : 'border-[#CDD5DC] hover:border-[#AEB8C1] focus:border-[#2869A0] focus:ring-4 focus:ring-[#2869A0]/10'
-                      }`}
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#89949E] transition-colors hover:text-[#34424E]"
-                      aria-label={
-                        showPassword
-                          ? 'Hide password'
-                          : 'Show password'
-                      }
-                    >
-                      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                    </button>
-                  </div>
-
-                  {fieldErrors.password && (
-                    <p
-                      id="password-error"
-                      className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-[#C84A42]"
-                      role="alert"
-                    >
-                      <AlertIcon />
-                      {fieldErrors.password}
-                    </p>
-                  )}
-                </div>
-
-                {/* Server error */}
-                {formError && (
-                  <div
-                    className="mb-5 flex items-start gap-3 rounded-[8px] border border-[#E8C5C2] bg-[#FFF7F6] px-3.5 py-3"
-                    role="alert"
-                  >
-                    <div className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-[#F5D8D5] text-[#B83E36]">
-                      <AlertIcon />
-                    </div>
-
-                    <div>
-                      <p className="text-[12px] font-bold text-[#9F3730]">
-                        Sign in unsuccessful
-                      </p>
-
-                      <p className="mt-0.5 text-[11px] leading-4 text-[#B55A53]">
-                        {formError}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Sign in */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="group relative mt-2 flex h-[52px] w-full items-center justify-center overflow-hidden rounded-[8px] bg-[#1F5F8F] px-5 text-[13px] font-bold tracking-[0.02em] text-white shadow-[0_5px_14px_rgba(31,95,143,0.18)] transition-all duration-200 hover:bg-[#194F78] hover:shadow-[0_7px_18px_rgba(31,95,143,0.23)] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      Signing in...
-                    </>
-                  ) : (
-                    <>
-                      Sign in to workspace
-
-                      <span className="ml-3 transition-transform duration-200 group-hover:translate-x-1">
-                        <ArrowRightIcon />
-                      </span>
-                    </>
-                  )}
-                </button>
-              </form>
-
-              {/* Bottom information */}
-              <div className="mt-7 border-t border-[#E9EDF0] pt-5">
-                <div className="flex items-start gap-2.5">
-                  <ShieldSmallIcon />
-
-                  <p className="text-[10.5px] leading-[1.55] text-[#87929C]">
-                    Authorized access only. Your credentials are protected
-                    and used solely for secure access to the Lean4Audit platform.
+                {fieldErrors.employeeId && (
+                  <p id="employee_id-error" className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#C84A42]" role="alert">
+                    <AlertIcon /> {fieldErrors.employeeId}
                   </p>
-                </div>
+                )}
               </div>
+
+              <div>
+                <label htmlFor="password" className="mb-2 block text-sm font-semibold text-[#344B5A]">Password</label>
+                <div className="relative">
+                  <span className="pointer-events-none absolute inset-y-0 left-0 flex w-11 items-center justify-center text-[#8A9BA7]"><KeyIcon /></span>
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: '' }))
+                    }}
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
+                    aria-invalid={Boolean(fieldErrors.password)}
+                    aria-describedby={fieldErrors.password ? 'password-error' : undefined}
+                    className={`${inputBase} pr-12 ${fieldErrors.password ? 'border-[#C84A42] bg-[#FFF9F8] focus:border-[#C84A42] focus:ring-[#C84A42]/10' : 'border-[#D9E2E8] hover:border-[#B8CAD5] focus:border-[#4D8CAE] focus:ring-[#4D8CAE]/10'}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-[#7D909D] transition hover:text-[#294B60] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4D8CAE]"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                  </button>
+                </div>
+                {fieldErrors.password && (
+                  <p id="password-error" className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#C84A42]" role="alert">
+                    <AlertIcon /> {fieldErrors.password}
+                  </p>
+                )}
+              </div>
+
+              {formError && (
+                <div className="flex items-start gap-3 rounded-xl border border-[#F0D0CC] bg-[#FFF7F6] px-4 py-3" role="alert">
+                  <span className="mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full bg-[#F9E2DF] text-[#B83E36]"><AlertIcon /></span>
+                  <div>
+                    <p className="text-sm font-semibold text-[#9F3730]">Sign in unsuccessful</p>
+                    <p className="mt-1 text-xs leading-5 text-[#B55A53]">{formError}</p>
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="group mt-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#245F82] px-5 py-3 text-sm font-semibold text-white shadow-[0_5px_14px_rgba(36,95,130,0.14)] transition duration-200 hover:bg-[#1D506F] hover:shadow-[0_8px_20px_rgba(36,95,130,0.18)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-[52px]"
+              >
+                {isSubmitting ? (
+                  <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> Signing in...</>
+                ) : (
+                  <>Continue to workspace <span className="transition-transform group-hover:translate-x-1"><ArrowRightIcon /></span></>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-7 flex items-start gap-2.5 border-t border-[#E7EDF1] pt-5">
+              <span className="mt-0.5 text-[#8096A4]"><ShieldSmallIcon /></span>
+              <p className="text-xs leading-5 text-[#8495A0]">
+                Authorized access only. Your credentials are used to securely access the Lean4Audit platform.
+              </p>
             </div>
 
-            {/* Outside card footer */}
-            <div className="mt-6 flex flex-col items-center justify-center gap-2 text-center sm:flex-row sm:gap-3">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#98A1AA]">
-                Lean4HR Systems
-              </span>
-
-              <span className="hidden h-3 w-px bg-[#CBD1D6] sm:block" />
-
-              <span className="text-[10px] text-[#A0A8B0]">
-                Secure enterprise platform
-              </span>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-[11px] text-[#9AA8B1] lg:justify-start">
+              <span className="font-semibold tracking-wide text-[#7C919F]">LEAN4HR SYSTEMS</span>
+              <span aria-hidden="true">·</span>
+              <span>Secure enterprise platform</span>
             </div>
-
           </div>
         </section>
       </div>
 
-      {/* Small animation definition — no new CSS file */}
       <style>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(6px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
         @media (prefers-reduced-motion: reduce) {
-          *,
-          *::before,
-          *::after {
+          *, *::before, *::after {
             animation-duration: 0.01ms !important;
             animation-iteration-count: 1 !important;
             transition-duration: 0.01ms !important;
@@ -500,300 +231,112 @@ export default function LoginPage() {
   )
 }
 
-/* ================================================================
-   SUPPORTING UI COMPONENTS
-================================================================ */
-
-function Capability({ number, title, description, bordered }) {
+function Brand({ dark = false, className = '' }) {
   return (
-    <div
-      className={`relative py-5 ${
-        bordered
-          ? 'border-l border-white/10 pl-5'
-          : 'pr-5'
-      }`}
-    >
-      <div className="mb-2 text-[10px] font-bold tracking-[0.15em] text-[#6E9DC2]">
-        {number}
+    <div className={`flex items-center gap-3 ${className}`}>
+      <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${dark ? 'border border-[#D5E6EF] bg-white/80' : 'border border-[#D8E7EF] bg-white shadow-sm'}`}>
+        <ShieldIcon />
       </div>
-
-      <div className="text-[13px] font-semibold text-white/90">
-        {title}
-      </div>
-
-      <div className="mt-1 text-[10px] text-white/35">
-        {description}
+      <div>
+        <div className="text-[19px] font-extrabold tracking-[-0.045em] text-[#173247]">
+          LEAN<span className="text-[#397FA5]">4</span>AUDIT
+        </div>
+        <div className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#718A9A]">
+          Plant Audit &amp; Continuous Improvement
+        </div>
       </div>
     </div>
   )
 }
 
-function ShieldIcon({ light = false }) {
+function Capability({ number, title, description, bordered }) {
   return (
-    <svg
-      width="21"
-      height="21"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-      className={light ? 'text-white' : 'text-white'}
-    >
-      <path
-        d="M12 3 20 6v5.8c0 4.8-3.2 7.8-8 9.2-4.8-1.4-8-4.4-8-9.2V6l8-3Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-      />
+    <div className={`${bordered ? 'border-l border-[#D5E4EC] pl-4 sm:pl-5' : 'pr-3 sm:pr-5'} py-1`}>
+      <div className="mb-2 text-[10px] font-bold tracking-[0.14em] text-[#5A8CAA]">{number}</div>
+      <div className="text-sm font-semibold text-[#29475B]">{title}</div>
+      <div className="mt-1 text-[11px] leading-4 text-[#8195A2]">{description}</div>
+    </div>
+  )
+}
 
-      <path
-        d="m8.5 12 2.2 2.2 4.8-4.8"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+function ShieldIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="text-[#397FA5]">
+      <path d="M12 3 20 6v5.8c0 4.8-3.2 7.8-8 9.2-4.8-1.4-8-4.4-8-9.2V6l8-3Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="m8.5 12 2.2 2.2 4.8-4.8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
 
 function ShieldSmallIcon() {
   return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      className="mt-0.5 flex-none text-[#7F8A94]"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 3 20 6v5.8c0 4.8-3.2 7.8-8 9.2-4.8-1.4-8-4.4-8-9.2V6l8-3Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-      />
-
-      <path
-        d="m8.5 12 2.2 2.2 4.8-4.8"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="inline-block flex-none">
+      <path d="M12 3 20 6v5.8c0 4.8-3.2 7.8-8 9.2-4.8-1.4-8-4.4-8-9.2V6l8-3Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="m8.5 12 2.2 2.2 4.8-4.8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
 
 function LockIcon() {
   return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <rect
-        x="5"
-        y="10"
-        width="14"
-        height="10"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
-
-      <path
-        d="M8 10V7a4 4 0 0 1 8 0v3"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-      />
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>
   )
 }
 
 function UserIcon() {
   return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <circle
-        cx="12"
-        cy="8"
-        r="3.2"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
-
-      <path
-        d="M5.5 20c.7-3.5 3-5.2 6.5-5.2s5.8 1.7 6.5 5.2"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-      />
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M5.5 20c.7-3.5 3-5.2 6.5-5.2s5.8 1.7 6.5 5.2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>
   )
 }
 
 function KeyIcon() {
   return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <circle
-        cx="8"
-        cy="15"
-        r="3"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
-
-      <path
-        d="m10.2 12.8 8.3-8.3M15 7l2 2M17.5 4.5l2 2"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="8" cy="15" r="3" stroke="currentColor" strokeWidth="1.7" />
+      <path d="m10.2 12.8 8.3-8.3M15 7l2 2M17.5 4.5l2 2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
 
 function EyeIcon() {
   return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      <circle
-        cx="12"
-        cy="12"
-        r="2.5"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.6" />
     </svg>
   )
 }
 
 function EyeOffIcon() {
   return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="m3 3 18 18"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-      />
-
-      <path
-        d="M10.6 10.6a2.5 2.5 0 0 0 3.5 3.5"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-
-      <path
-        d="M9.4 5.5A11.8 11.8 0 0 1 12 5c6.4 0 10 7 10 7a15 15 0 0 1-3.2 4.1"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      <path
-        d="M6.4 6.4A15.8 15.8 0 0 0 2 12s3.6 7 10 7c1.3 0 2.5-.2 3.6-.6"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="m3 3 18 18" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M10.6 10.6a2.5 2.5 0 0 0 3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M9.4 5.5A11.8 11.8 0 0 1 12 5c6.4 0 10 7 10 7a15 15 0 0 1-3.2 4.1M6.4 6.4A15.8 15.8 0 0 0 2 12s3.6 7 10 7c1.3 0 2.5-.2 3.6-.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
 
 function ArrowRightIcon() {
   return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M5 12h13"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-
-      <path
-        d="m13 6 6 6-6 6"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 12h13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="m13 6 6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
 
 function AlertIcon() {
   return (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 8v4"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-
-      <path
-        d="M12 16h.01"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-
-      <path
-        d="M10.3 4.5 3.1 17a2 2 0 0 0 1.7 3h14.4a2 2 0 0 0 1.7-3L13.7 4.5a2 2 0 0 0-3.4 0Z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
-      />
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="flex-none">
+      <path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M10.3 4.5 3.1 17a2 2 0 0 0 1.7 3h14.4a2 2 0 0 0 1.7-3L13.7 4.5a2 2 0 0 0-3.4 0Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
     </svg>
   )
 }

@@ -270,16 +270,16 @@ export default function ZonesPage() {
   const activeZones = activeCount
 
   return (
-    <div className="min-h-full bg-[var(--background)] p-4 md:p-6 lg:p-8">
+    <div className="min-h-full bg-[var(--background)] p-3 sm:p-4 md:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="mb-1 flex items-center gap-2 text-sm text-ink2-muted">
               <MapPin className="h-4 w-4" />
               Administration
             </div>
 
-            <h1 className="text-2xl font-bold tracking-tight text-ink2 md:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-ink2 sm:text-3xl">
               Zones
             </h1>
 
@@ -297,11 +297,11 @@ export default function ZonesPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
             <button
               type="button"
               onClick={() => setShowBulk(true)}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-line-strong bg-surface px-4 text-sm font-semibold text-ink2 transition hover:bg-canvas"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-line-strong bg-surface px-4 py-2.5 text-sm font-semibold text-ink2 transition hover:bg-canvas sm:w-auto"
             >
               <Upload className="h-4 w-4" />
               Bulk Upload
@@ -310,7 +310,7 @@ export default function ZonesPage() {
             <button
               type="button"
               onClick={openCreate}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-hover"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-hover sm:w-auto"
             >
               <Plus className="h-4 w-4" />
               Add Zone
@@ -330,8 +330,8 @@ export default function ZonesPage() {
           </div>
         )}
 
-        <div className="mb-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_240px]">
-          <div className="flex h-11 items-center gap-3 rounded-xl border border-line bg-surface px-3">
+        <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_260px]">
+          <div className="flex min-h-11 items-center gap-3 rounded-xl border border-line bg-surface px-3 focus-within:border-brand focus-within:ring-4 focus-within:ring-brand-soft">
             <Search className="h-4 w-4 shrink-0 text-ink2-muted" />
             <input
               value={search}
@@ -344,7 +344,7 @@ export default function ZonesPage() {
           <select
             value={plantFilter}
             onChange={(event) => setPlantFilter(event.target.value)}
-            className="h-11 rounded-xl border border-line bg-surface px-3 text-sm text-ink2 outline-none focus:border-brand focus:ring-4 focus:ring-brand-soft"
+            className="min-h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm text-ink2 outline-none focus:border-brand focus:ring-4 focus:ring-brand-soft"
           >
             <option value="">All Plants</option>
             {plants.map((plant) => (
@@ -354,6 +354,19 @@ export default function ZonesPage() {
             ))}
           </select>
         </div>
+
+        {!loading && zones.length > 0 && total > PAGE_SIZE && (
+          <div className="mb-3 overflow-hidden rounded-2xl border border-line bg-surface shadow-xs">
+            <Pagination
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={total}
+              onPageChange={setPage}
+              disabled={loading}
+              className="border-t-0"
+            />
+          </div>
+        )}
 
         <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-xs">
           {loading ? (
@@ -470,11 +483,11 @@ export default function ZonesPage() {
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-end gap-1">
+                  <div className="flex items-center justify-end gap-2 border-t border-line pt-2 lg:border-0 lg:pt-0">
                     <button
                       type="button"
                       onClick={() => openEdit(zone)}
-                      className="rounded-lg p-2 text-ink2-muted hover:bg-canvas hover:text-ink2"
+                      className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-line text-ink2-muted transition hover:bg-canvas hover:text-ink2"
                       title="Edit Zone"
                     >
                       <Edit3 className="h-4 w-4" />
@@ -483,7 +496,7 @@ export default function ZonesPage() {
                     <button
                       type="button"
                       onClick={() => handleDelete(zone)}
-                      className="rounded-lg p-2 text-ink2-muted hover:bg-red-50 hover:text-danger"
+                      className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-line text-ink2-muted transition hover:bg-red-50 hover:text-danger"
                       title="Delete Zone"
                     >
                       <MoreHorizontal className="h-4 w-4" />
@@ -493,13 +506,23 @@ export default function ZonesPage() {
               ))}
             </div>
           )}
+
+          {!loading && zones.length > 0 && (
+            <Pagination
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={total}
+              onPageChange={setPage}
+              disabled={loading}
+            />
+          )}
         </div>
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl">
-            <div className="flex items-center justify-between border-b border-line px-6 py-5">
+        <div className="fixed inset-0 z-[1000] flex items-end justify-center overflow-y-auto bg-black/35 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="max-h-[94dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-line bg-surface shadow-2xl sm:max-h-[90vh] sm:rounded-2xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-surface px-4 py-4 sm:px-6 sm:py-5">
               <div>
                 <h2 className="text-lg font-bold text-ink2">
                   {editingZone ? 'Edit Zone' : 'Add Zone'}
@@ -520,7 +543,7 @@ export default function ZonesPage() {
             </div>
 
             <form onSubmit={handleSubmit}>
-              <div className="space-y-5 px-6 py-6">
+              <div className="space-y-5 px-4 py-5 sm:px-6 sm:py-6">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-ink2">
                     Zone Name *
@@ -613,12 +636,12 @@ export default function ZonesPage() {
                 )}
               </div>
 
-              <div className="flex justify-end gap-3 border-t border-line px-6 py-4">
+              <div className="sticky bottom-0 flex flex-col-reverse gap-2 border-t border-line bg-surface px-4 py-4 sm:flex-row sm:justify-end sm:gap-3 sm:px-6">
                 <button
                   type="button"
                   onClick={closeForm}
                   disabled={submitting}
-                  className="rounded-lg border border-line-strong px-5 py-2.5 text-sm font-semibold text-ink2-secondary hover:bg-canvas"
+                  className="min-h-11 rounded-lg border border-line-strong px-5 py-2.5 text-sm font-semibold text-ink2-secondary hover:bg-canvas"
                 >
                   Cancel
                 </button>
@@ -626,7 +649,7 @@ export default function ZonesPage() {
                 <button
                   type="submit"
                   disabled={submitting || loadingFormData}
-                  className="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-hover disabled:opacity-60"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-hover disabled:opacity-60"
                 >
                   {submitting && (
                     <Loader2 className="h-4 w-4 animate-spin" />

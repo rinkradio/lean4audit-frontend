@@ -244,6 +244,79 @@ function ConsultantAvatar({ name }) {
 }
 
 // ---------------------------------------------------------
+// SHARED PAGINATION BAR
+// Rendered above and below the directory table so users can
+// change pages without having to scroll to either end.
+// ---------------------------------------------------------
+
+function PaginationBar({
+  page,
+  totalPages,
+  firstResult,
+  lastResult,
+  total,
+  setPage,
+  placement = 'bottom',
+}) {
+  const isTop = placement === 'top'
+
+  return (
+    <div
+      className={`flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 ${
+        isTop
+          ? 'border-b border-[#e8eef2] bg-[#fbfcfd]'
+          : 'mt-4 rounded-xl border border-[#e1e9ee] bg-white'
+      }`}
+      aria-label={`${isTop ? 'Top' : 'Bottom'} table pagination`}
+    >
+      <p className="text-xs font-medium text-[#7d8d97]">
+        Showing{' '}
+        <span className="font-bold text-[#425c6b]">{firstResult}</span>
+        {' '}–{' '}
+        <span className="font-bold text-[#425c6b]">{lastResult}</span>
+        {' '}of{' '}
+        <span className="font-bold text-[#425c6b]">{total}</span>
+        {' '}
+        {total === 1 ? 'consultant' : 'consultants'}
+      </p>
+
+      {totalPages > 1 && (
+        <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+          <button
+            type="button"
+            aria-label="Go to previous page"
+            className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#d6e0e6] bg-white px-3 text-xs font-semibold text-[#526b79] transition-colors hover:border-[#b9ccd7] hover:bg-[#f4f8fa] focus:outline-none focus:ring-4 focus:ring-[#e6f0f5] disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
+            disabled={page <= 1}
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+          >
+            <ChevronLeftIcon />
+            Previous
+          </button>
+
+          <div
+            className="flex min-h-10 shrink-0 items-center rounded-lg border border-[#d6e0e6] bg-white px-3 text-xs font-bold text-[#526975]"
+            aria-live="polite"
+          >
+            Page {page} <span className="mx-1.5 text-[#a0adb5]">/</span> {totalPages}
+          </div>
+
+          <button
+            type="button"
+            aria-label="Go to next page"
+            className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#d6e0e6] bg-white px-3 text-xs font-semibold text-[#526b79] transition-colors hover:border-[#b9ccd7] hover:bg-[#f4f8fa] focus:outline-none focus:ring-4 focus:ring-[#e6f0f5] disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
+            disabled={page >= totalPages}
+            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+          >
+            Next
+            <ChevronRightIcon />
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------
 // MAIN PAGE
 // ---------------------------------------------------------
 
@@ -459,17 +532,17 @@ export default function ConsultantsListPage() {
   // -------------------------------------------------------
 
   return (
-    <div className="min-h-full w-full bg-[#f4f7f9]">
+    <div className="min-h-full w-full bg-[#f5f7fa]">
 
-      <div className="mx-auto w-full max-w-[1480px] px-5 py-6 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
+      <div className="mx-auto w-full max-w-[1480px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-10 2xl:px-12">
 
         {/* =================================================
             PAGE HEADER
         ================================================= */}
 
-        <div className="mb-7">
+        <div className="mb-6 sm:mb-7">
 
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
 
             <div className="min-w-0">
 
@@ -487,7 +560,7 @@ export default function ConsultantsListPage() {
                 </span>
               </div>
 
-              <h1 className="text-[28px] font-bold tracking-[-0.035em] text-[#172d3d] sm:text-[31px]">
+              <h1 className="text-[27px] font-bold tracking-[-0.035em] text-[#172d3d] sm:text-[31px]">
                 Lean Consultants
               </h1>
 
@@ -504,7 +577,7 @@ export default function ConsultantsListPage() {
               onClick={() =>
                 setShowCreateDrawer(true)
               }
-              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 self-start rounded-lg bg-[#245d80] px-4 text-[13px] font-semibold text-white shadow-[0_1px_2px_rgba(16,42,59,0.14)] transition-colors hover:bg-[#1e4f6d] focus:outline-none focus:ring-4 focus:ring-[#dcebf2] lg:self-auto"
+              className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 self-stretch rounded-xl bg-[#245d80] px-4 text-[13px] font-semibold text-white shadow-[0_1px_2px_rgba(16,42,59,0.14)] transition-colors hover:bg-[#1e4f6d] focus:outline-none focus:ring-4 focus:ring-[#dcebf2] sm:w-auto sm:self-start lg:self-auto"
             >
               <UserPlusIcon />
               Add Consultant
@@ -518,11 +591,11 @@ export default function ConsultantsListPage() {
             SUMMARY CARDS
         ================================================= */}
 
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
 
           {/* TOTAL */}
 
-          <div className="rounded-xl border border-[#dfe7ec] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(25,55,72,0.03)]">
+          <div className="rounded-xl border border-[#dfe7ec] bg-white px-4 py-4 shadow-[0_1px_2px_rgba(25,55,72,0.03)] sm:px-5">
 
             <div className="flex items-center justify-between">
 
@@ -554,7 +627,7 @@ export default function ConsultantsListPage() {
 
           {/* ACTIVE */}
 
-          <div className="rounded-xl border border-[#dfe7ec] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(25,55,72,0.03)]">
+          <div className="rounded-xl border border-[#dfe7ec] bg-white px-4 py-4 shadow-[0_1px_2px_rgba(25,55,72,0.03)] sm:px-5">
 
             <div className="flex items-center justify-between">
 
@@ -586,7 +659,7 @@ export default function ConsultantsListPage() {
 
           {/* INACTIVE */}
 
-          <div className="rounded-xl border border-[#dfe7ec] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(25,55,72,0.03)]">
+          <div className="rounded-xl border border-[#dfe7ec] bg-white px-4 py-4 shadow-[0_1px_2px_rgba(25,55,72,0.03)] sm:px-5">
 
             <div className="flex items-center justify-between">
 
@@ -622,15 +695,15 @@ export default function ConsultantsListPage() {
             FILTER TOOLBAR
         ================================================= */}
 
-        <div className="mb-5 rounded-xl border border-[#dfe7ec] bg-white p-3 shadow-[0_1px_2px_rgba(25,55,72,0.03)]">
+        <div className="mb-4 rounded-xl border border-[#dfe7ec] bg-white p-3 shadow-[0_1px_2px_rgba(25,55,72,0.03)] sm:mb-5 sm:p-4">
 
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex min-w-0 flex-col gap-3 sm:flex-row">
 
               {/* SEARCH */}
 
-              <div className="relative">
+              <div className="relative w-full sm:w-auto">
 
                 <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#82939e]">
                   <SearchIcon />
@@ -643,14 +716,14 @@ export default function ConsultantsListPage() {
                     setSearch(event.target.value)
                   }
                   placeholder="Search consultants..."
-                  className="h-10 w-full rounded-lg border border-[#d8e2e8] bg-[#fbfcfd] pl-10 pr-4 text-[13px] font-medium text-[#243b4a] outline-none transition focus:border-[#4b7d9b] focus:bg-white focus:ring-4 focus:ring-[#e6f0f5] sm:w-[300px]"
+                  className="h-11 w-full rounded-xl border border-[#d8e2e8] bg-[#fbfcfd] pl-10 pr-4 text-[13px] font-medium text-[#243b4a] outline-none transition focus:border-[#4b7d9b] focus:bg-white focus:ring-4 focus:ring-[#e6f0f5] sm:w-[300px]"
                 />
 
               </div>
 
               {/* STATUS */}
 
-              <div className="flex h-10 rounded-lg border border-[#d8e2e8] bg-[#f5f7f8] p-1">
+              <div className="flex min-h-11 w-full rounded-xl border border-[#d8e2e8] bg-[#f5f7f8] p-1 sm:w-auto">
 
                 {[
                   ['', 'All'],
@@ -663,7 +736,7 @@ export default function ConsultantsListPage() {
                     onClick={() =>
                       setStatusFilter(value)
                     }
-                    className={`rounded-md px-4 text-[12px] font-bold transition ${
+                    className={`flex-1 rounded-lg px-3 text-[12px] font-bold transition sm:flex-none sm:px-4 ${
                       statusFilter === value
                         ? 'bg-white text-[#244e68] shadow-[0_1px_3px_rgba(25,55,72,0.10)]'
                         : 'text-[#788993] hover:text-[#29495d]'
@@ -679,7 +752,7 @@ export default function ConsultantsListPage() {
 
             {/* TOOL ACTIONS */}
 
-            <div className="flex items-center gap-3">
+            <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
 
               {hasFilters && (
                 <button
@@ -688,7 +761,7 @@ export default function ConsultantsListPage() {
                     setSearch('')
                     setStatusFilter('')
                   }}
-                  className="text-[12px] font-semibold text-[#687b87] transition-colors hover:text-[#245d80]"
+                  className="min-h-10 flex-1 rounded-lg px-3 text-center text-[12px] font-semibold text-[#687b87] transition-colors hover:bg-[#f5f8fa] hover:text-[#245d80] sm:flex-none"
                 >
                   Clear filters
                 </button>
@@ -698,7 +771,7 @@ export default function ConsultantsListPage() {
                 type="button"
                 onClick={loadConsultants}
                 disabled={isLoading}
-                className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#d5e0e6] bg-white px-3.5 text-[12px] font-semibold text-[#566d7a] transition-colors hover:bg-[#f7f9fa] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-[#d5e0e6] bg-white px-3.5 text-[12px] font-semibold text-[#566d7a] transition-colors hover:bg-[#f7f9fa] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
               >
                 <RefreshIcon />
                 Refresh
@@ -738,6 +811,19 @@ export default function ConsultantsListPage() {
             </div>
 
           </div>
+
+          {/* TOP PAGINATION: keep page controls visible before the table */}
+          {!isLoading && !loadError && consultants.length > 0 && (
+            <PaginationBar
+              placement="top"
+              page={page}
+              totalPages={totalPages}
+              firstResult={firstResult}
+              lastResult={lastResult}
+              total={total}
+              setPage={setPage}
+            />
+          )}
 
           {/* =================================================
               LOADING
@@ -847,7 +933,7 @@ export default function ConsultantsListPage() {
                   DESKTOP TABLE
               ============================================= */}
 
-              <div className="hidden overflow-x-auto md:block">
+              <div className="hidden overflow-x-auto lg:block">
 
                 <table className="w-full min-w-[1080px] table-fixed text-left">
 
@@ -1047,12 +1133,12 @@ export default function ConsultantsListPage() {
                   MOBILE CARDS
               ============================================= */}
 
-              <div className="divide-y divide-[#e8edf0] md:hidden">
+              <div className="space-y-3 bg-[#f7f9fb] p-3 lg:hidden">
 
                 {consultants.map((consultant) => (
                   <div
                     key={consultant.id}
-                    className="p-4"
+                    className="rounded-xl border border-[#e3eaf0] bg-white p-4 shadow-[0_1px_3px_rgba(25,55,72,0.04)]"
                   >
 
                     <div className="flex items-start justify-between gap-3">
@@ -1179,92 +1265,18 @@ export default function ConsultantsListPage() {
 
         </div>
 
-        {/* =================================================
-            PAGINATION / RESULT COUNT
-        ================================================= */}
-
-        {!isLoading &&
-          !loadError &&
-          consultants.length > 0 && (
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
-              <div className="text-[11px] font-medium text-[#7d8d97]">
-
-                Showing{' '}
-
-                <span className="font-bold text-[#536873]">
-                  {firstResult}
-                </span>
-
-                {' '}–{' '}
-
-                <span className="font-bold text-[#536873]">
-                  {lastResult}
-                </span>
-
-                {' '}of{' '}
-
-                <span className="font-bold text-[#536873]">
-                  {total}
-                </span>
-
-                {' '}
-                {total === 1
-                  ? 'consultant'
-                  : 'consultants'}
-
-              </div>
-
-              {totalPages > 1 && (
-                <div className="flex items-center gap-2">
-
-                  <button
-                    type="button"
-                    className="inline-flex h-9 items-center gap-1 rounded-lg border border-[#d6e0e6] bg-white px-3 text-[11px] font-semibold text-[#607480] transition-colors hover:bg-[#f6f9fa] disabled:cursor-not-allowed disabled:opacity-40"
-                    disabled={page <= 1}
-                    onClick={() =>
-                      setPage((current) =>
-                        current - 1
-                      )
-                    }
-                  >
-                    <ChevronLeftIcon />
-                    Previous
-                  </button>
-
-                  <div className="flex h-9 items-center rounded-lg border border-[#d6e0e6] bg-white px-3 text-[11px] font-bold text-[#526975]">
-
-                    Page {page}
-
-                    <span className="mx-1.5 text-[#a0adb5]">
-                      /
-                    </span>
-
-                    {totalPages}
-
-                  </div>
-
-                  <button
-                    type="button"
-                    className="inline-flex h-9 items-center gap-1 rounded-lg border border-[#d6e0e6] bg-white px-3 text-[11px] font-semibold text-[#607480] transition-colors hover:bg-[#f6f9fa] disabled:cursor-not-allowed disabled:opacity-40"
-                    disabled={
-                      page >= totalPages
-                    }
-                    onClick={() =>
-                      setPage((current) =>
-                        current + 1
-                      )
-                    }
-                  >
-                    Next
-                    <ChevronRightIcon />
-                  </button>
-
-                </div>
-              )}
-
-            </div>
-          )}
+        {/* BOTTOM PAGINATION: same page state as the controls above */}
+        {!isLoading && !loadError && consultants.length > 0 && (
+          <PaginationBar
+            placement="bottom"
+            page={page}
+            totalPages={totalPages}
+            firstResult={firstResult}
+            lastResult={lastResult}
+            total={total}
+            setPage={setPage}
+          />
+        )}
 
         {/* =================================================
             CREATE DRAWER
