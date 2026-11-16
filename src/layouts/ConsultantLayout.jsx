@@ -20,6 +20,11 @@ const NAV_ITEMS = [
     path: '/consultant/audits',
     icon: AuditIcon,
   },
+  {
+    label: 'Reports',
+    path: '/consultant/reports',
+    icon: ReportsIcon,
+  },
 ]
 
 export default function ConsultantLayout() {
@@ -1017,6 +1022,22 @@ function AuditIcon() {
       <path d="M8.5 13h7" />
       <path d="M8.5 17h4" />
 
+    </svg>
+  )
+}
+
+/* ============================================================
+   REPORTS
+============================================================ */
+
+function ReportsIcon() {
+  return (
+    <svg {...iconProps()}>
+      <path d="M4 19.5V4.5" />
+      <path d="M4 19.5h16" />
+      <rect x="7" y="11" width="2.8" height="5.5" rx=".5" />
+      <rect x="11.2" y="7.5" width="2.8" height="9" rx=".5" />
+      <rect x="15.4" y="4.5" width="2.8" height="12" rx=".5" />
     </svg>
   )
 }

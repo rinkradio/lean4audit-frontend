@@ -11,6 +11,7 @@ import { fetchPlants } from "../../services/plantService";
 import { fetchZones } from "../../services/zoneService";
 import { fetchAudits } from "../../services/auditService";
 import apiClient from "../../services/apiClient";
+import { exportAuditExcel, exportAuditPdf } from "../../services/auditExportService";
 
 // ============================================================
 // META
@@ -593,6 +594,15 @@ export default function AdminReportsPage() {
   const [exporting, setExporting] =
     useState(null);
 
+  const [openDownloadAudit, setOpenDownloadAudit] =
+    useState(null);
+
+  const [observationTypesByAudit, setObservationTypesByAudit] =
+    useState({});
+
+  const [loadingObservationTypes, setLoadingObservationTypes] =
+    useState(null);
+
   // ==========================================================
   // LOAD DATA
   // ==========================================================
@@ -1074,79 +1084,73 @@ export default function AdminReportsPage() {
   // EXPORT
   // ==========================================================
 
-  async function exportAudit(
-    auditId,
-    type
-  ) {
-    const key =
-      `${auditId}-${type}`;
+  async function exportAudit(auditId, type, options = {}) {
+    const key = `${auditId}-${type}-${options.observationType || options.observationId || "all"}`;
 
     try {
       setExporting(key);
 
-      const response =
-        await apiClient.get(
-          `/audits/${auditId}/export/${type}`,
-          {
-            responseType: "blob",
-          }
-        );
-
-      const contentType =
-        response.headers[
-          "content-type"
-        ] ||
-        "application/octet-stream";
-
-      const blob = new Blob(
-        [response.data],
-        {
-          type: contentType,
-        }
-      );
-
-      const url =
-        window.URL.createObjectURL(
-          blob
-        );
-
-      const link =
-        document.createElement(
-          "a"
-        );
-
-      link.href = url;
-
-      const extension =
-        type === "pdf"
-          ? "pdf"
-          : "xlsx";
-
-      link.download =
-        `${auditId}-audit-report.${extension}`;
-
-      document.body.appendChild(
-        link
-      );
-
-      link.click();
-
-      link.remove();
-
-      window.URL.revokeObjectURL(
-        url
-      );
+      if (type === "excel") {
+        await exportAuditExcel(auditId, options);
+      } else {
+        await exportAuditPdf(auditId, options);
+      }
     } catch (err) {
-      console.error(
-        "Report export failed:",
-        err
-      );
-
-      window.alert(
-        `Unable to export ${type.toUpperCase()} report.`
-      );
+      console.error("Report export failed:", err);
+      window.alert(`Unable to export ${type.toUpperCase()} report.`);
     } finally {
       setExporting(null);
+    }
+  }
+
+  async function toggleAuditDownload(auditId) {
+    if (openDownloadAudit === auditId) {
+      setOpenDownloadAudit(null);
+      return;
+    }
+
+    setOpenDownloadAudit(auditId);
+
+    if (observationTypesByAudit[auditId]) return;
+
+    try {
+      setLoadingObservationTypes(auditId);
+      let page = 1;
+      let items = [];
+      let total = 0;
+      do {
+        const response = await apiClient.get(
+          `/audits/${auditId}/observations`,
+          { params: { page, page_size: 100 } }
+        );
+        const pageItems = response.data?.items || [];
+        items = items.concat(pageItems);
+        total = Number(response.data?.total || 0);
+        page += 1;
+        if (!pageItems.length) break;
+      } while (items.length < total);
+
+      const counts = { "5S": 0, SAFETY: 0, GEMBA: 0 };
+
+      items.forEach((observation) => {
+        const type = String(observation.observation_type || "5S").toUpperCase();
+        if (Object.prototype.hasOwnProperty.call(counts, type)) {
+          counts[type] += 1;
+        }
+      });
+
+      setObservationTypesByAudit((current) => ({
+        ...current,
+        [auditId]: Object.entries(counts)
+          .filter(([, count]) => count > 0)
+          .map(([type, count]) => ({ type, count })),
+      }));
+    } catch (err) {
+      console.error("Unable to load observation types:", err);
+      window.alert("Unable to load observations for this audit. Please try again.");
+      setOpenDownloadAudit(null);
+    } finally {
+      setLoadingObservationTypes(null);
     }
   }
 
@@ -2339,49 +2343,65 @@ export default function AdminReportsPage() {
                             View
                           </button>
 
-                          <button
-                            type="button"
-                            disabled={
-                              exporting ===
-                              `${audit.id}-excel`
-                            }
-                            onClick={() =>
-                              exportAudit(
-                                audit.id,
-                                "excel"
-                              )
-                            }
-                            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#d5e0e6] bg-white px-3 text-[9px] font-bold text-[#607480] transition hover:bg-[#f6f9fa] disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <DownloadIcon />
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => toggleAuditDownload(audit.id)}
+                              className="inline-flex h-8 items-center gap-2 rounded-lg bg-[#315f79] px-3 text-[9px] font-bold text-white transition hover:bg-[#274f66]"
+                            >
+                              <DownloadIcon />
+                              Download
+                              <span aria-hidden="true">▾</span>
+                            </button>
 
-                            {exporting ===
-                            `${audit.id}-excel`
-                              ? "Exporting..."
-                              : "Excel"}
-                          </button>
+                            {openDownloadAudit === audit.id && (
+                              <div className="absolute right-0 z-30 mt-2 w-64 rounded-xl border border-[#dce5e9] bg-white p-2 shadow-xl">
+                                <div className="px-2 py-1.5 text-[9px] font-bold uppercase tracking-wider text-[#8999a2]">
+                                  Complete Audit
+                                </div>
+                                <button
+                                  type="button"
+                                  disabled={!!exporting}
+                                  onClick={() => exportAudit(audit.id, "pdf")}
+                                  className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-[10px] font-semibold text-[#526875] hover:bg-[#f4f8fa] disabled:opacity-50"
+                                >
+                                  Download All (PDF)
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={!!exporting}
+                                  onClick={() => exportAudit(audit.id, "excel")}
+                                  className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-[10px] font-semibold text-[#526875] hover:bg-[#f4f8fa] disabled:opacity-50"
+                                >
+                                  Download All (Excel)
+                                </button>
 
-                          <button
-                            type="button"
-                            disabled={
-                              exporting ===
-                              `${audit.id}-pdf`
-                            }
-                            onClick={() =>
-                              exportAudit(
-                                audit.id,
-                                "pdf"
-                              )
-                            }
-                            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#315f79] px-3 text-[9px] font-bold text-white transition hover:bg-[#274f66] disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <DownloadIcon />
+                                <div className="my-1 border-t border-[#edf1f3]" />
+                                <div className="px-2 py-1.5 text-[9px] font-bold uppercase tracking-wider text-[#8999a2]">
+                                  By Observation Type
+                                </div>
 
-                            {exporting ===
-                            `${audit.id}-pdf`
-                              ? "Exporting..."
-                              : "PDF"}
-                          </button>
+                                {loadingObservationTypes === audit.id ? (
+                                  <div className="px-2.5 py-3 text-[10px] text-[#8797a0]">Loading available types...</div>
+                                ) : (observationTypesByAudit[audit.id] || []).length === 0 ? (
+                                  <div className="px-2.5 py-3 text-[10px] text-[#8797a0]">No observations available.</div>
+                                ) : (
+                                  observationTypesByAudit[audit.id].map(({ type, count }) => (
+                                    <div key={type} className="mb-1 rounded-lg bg-[#f8fafb] px-2.5 py-2">
+                                      <div className="mb-1.5 flex items-center justify-between">
+                                        <span className="text-[10px] font-bold text-[#425b69]">{type === "5S" ? "5S" : type === "GEMBA" ? "Gemba" : "Safety"}</span>
+                                        <span className="text-[9px] text-[#8a9aa3]">{count} observation{count === 1 ? "" : "s"}</span>
+                                      </div>
+                                      <div className="flex gap-1.5">
+                                        <button type="button" disabled={!!exporting} onClick={() => exportAudit(audit.id, "pdf", { observationType: type })} className="flex-1 rounded-md border border-[#dbe5ea] bg-white px-2 py-1.5 text-[9px] font-bold text-[#526d7b] hover:bg-[#eef5f8] disabled:opacity-50">PDF</button>
+                                        <button type="button" disabled={!!exporting} onClick={() => exportAudit(audit.id, "excel", { observationType: type })} className="flex-1 rounded-md border border-[#dbe5ea] bg-white px-2 py-1.5 text-[9px] font-bold text-[#526d7b] hover:bg-[#eef5f8] disabled:opacity-50">Excel</button>
+                                      </div>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            )}
+                          </div>
 
                         </div>
 

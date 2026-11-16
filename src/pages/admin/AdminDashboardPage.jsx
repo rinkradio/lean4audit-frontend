@@ -343,6 +343,24 @@ export default function AdminDashboardPage() {
      DERIVED DATA
   ============================================================== */
 
+  // Resolve plant and zone relationships from the datasets already loaded.
+  // Audit responses may contain zone_id without nested zone/plant objects.
+  const zoneMap = useMemo(
+    () =>
+      new Map(
+        zones.map((zone) => [String(zone.id), zone])
+      ),
+    [zones]
+  )
+
+  const plantMap = useMemo(
+    () =>
+      new Map(
+        plants.map((plant) => [String(plant.id), plant])
+      ),
+    [plants]
+  )
+
   const sortedAudits = useMemo(
     () => sortAudits(audits),
     [audits]
@@ -1027,14 +1045,38 @@ export default function AdminDashboardPage() {
                 .slice(0, 8)
                 .map((audit) => {
 
+                  const auditZoneId =
+                    audit.zone_id ??
+                    audit.zone?.id
+
+                  const resolvedZone =
+                    (auditZoneId != null
+                      ? zoneMap.get(String(auditZoneId))
+                      : null) ||
+                    audit.zone ||
+                    null
+
+                  const auditPlantId =
+                    resolvedZone?.plant_id ??
+                    audit.zone?.plant_id ??
+                    audit.plant_id ??
+                    audit.plant?.id
+
+                  const resolvedPlant =
+                    (auditPlantId != null
+                      ? plantMap.get(String(auditPlantId))
+                      : null) ||
+                    audit.zone?.plant ||
+                    audit.plant ||
+                    null
+
                   const zoneName =
-                    audit.zone?.name ||
+                    resolvedZone?.name ||
                     audit.zone_name ||
                     'Unknown zone'
 
                   const plantName =
-                    audit.zone?.plant?.name ||
-                    audit.plant?.name ||
+                    resolvedPlant?.name ||
                     'Unknown plant'
 
                   return (

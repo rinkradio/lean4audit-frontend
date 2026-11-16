@@ -90,6 +90,26 @@ function InfoField({ label, value }) {
   )
 }
 
+async function fetchAllAuditObservations(auditId) {
+  const allItems = []
+  let page = 1
+  let total = 0
+
+  do {
+    const response = await fetchObservations(auditId, {
+      page,
+      pageSize: 100,
+    })
+    const items = response.items || []
+    allItems.push(...items)
+    total = Number(response.total || 0)
+    page += 1
+    if (!items.length) break
+  } while (allItems.length < total)
+
+  return { items: allItems, total }
+}
+
 export default function AuditDetailPage() {
   const { auditId } = useParams()
   const navigate = useNavigate()
@@ -109,23 +129,37 @@ export default function AuditDetailPage() {
   const [exportingExcel, setExportingExcel] = useState(false)
   const [exportingPdf, setExportingPdf] = useState(false)
   const [exportError, setExportError] = useState('')
+  const [availableObservationTypes, setAvailableObservationTypes] = useState([])
+  const [exportObservationType, setExportObservationType] = useState('ALL')
+  const [exportingObservation, setExportingObservation] = useState(null)
 
   const load = useCallback(async () => {
     setIsLoading(true)
     setLoadError('')
 
     try {
-      const [auditData, obsData] = await Promise.all([
+      const [auditData, obsData, allObservationTypesData] = await Promise.all([
         fetchAudit(auditId),
         fetchObservations(auditId, {
           page: observationPage,
           pageSize: OBSERVATION_PAGE_SIZE,
         }),
+        fetchAllAuditObservations(auditId),
       ])
 
       setAudit(auditData)
       setObservations(obsData.items || [])
       setObservationTotal(Number(obsData.total || 0))
+      const typeCounts = { '5S': 0, SAFETY: 0, GEMBA: 0 }
+      ;(allObservationTypesData.items || []).forEach((item) => {
+        const type = String(item.observation_type || '5S').toUpperCase()
+        if (Object.prototype.hasOwnProperty.call(typeCounts, type)) typeCounts[type] += 1
+      })
+      setAvailableObservationTypes(
+        Object.entries(typeCounts)
+          .filter(([, count]) => count > 0)
+          .map(([type, count]) => ({ type, count }))
+      )
 
       const evidenceEntries = await Promise.all(
         (obsData.items || []).map(async (obs) => {
@@ -201,7 +235,7 @@ export default function AuditDetailPage() {
     setExportingExcel(true)
 
     try {
-      await exportAuditExcel(auditId)
+      await exportAuditExcel(auditId, exportObservationType === 'ALL' ? {} : { observationType: exportObservationType })
     } catch {
       setExportError(
         'Unable to generate the Excel report. Please try again.'
@@ -218,13 +252,31 @@ export default function AuditDetailPage() {
     setExportingPdf(true)
 
     try {
-      await exportAuditPdf(auditId)
+      await exportAuditPdf(auditId, exportObservationType === 'ALL' ? {} : { observationType: exportObservationType })
     } catch {
       setExportError(
         'Unable to generate the PDF report. Please try again.'
       )
     } finally {
       setExportingPdf(false)
+    }
+  }
+
+  const handleObservationExport = async (observation, format) => {
+    const key = `${observation.id}-${format}`
+    setExportError('')
+    setExportingObservation(key)
+    try {
+      if (format === 'excel') {
+        await exportAuditExcel(auditId, { observationId: observation.id })
+      } else {
+        await exportAuditPdf(auditId, { observationId: observation.id })
+      }
+    } catch (error) {
+      console.error('Observation export failed:', error)
+      setExportError(`Unable to download ${observation.observation_number}. Please try again.`)
+    } finally {
+      setExportingObservation(null)
     }
   }
 
@@ -306,7 +358,20 @@ export default function AuditDetailPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={exportObservationType}
+                  onChange={(event) => setExportObservationType(event.target.value)}
+                  className="h-10 rounded-md border border-line-strong bg-surface px-3 text-sm font-medium text-ink2"
+                  aria-label="Choose observations to export"
+                >
+                  <option value="ALL">All observations</option>
+                  {availableObservationTypes.map(({ type, count }) => (
+                    <option key={type} value={type}>
+                      {type === '5S' ? '5S' : type === 'GEMBA' ? 'Gemba' : 'Safety'} only ({count})
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
                   onClick={handleExcelExport}
@@ -436,9 +501,24 @@ export default function AuditDetailPage() {
                     />
                   </div>
 
-                  <span className="text-xs text-ink2-muted">
-                    Logged {formatDateTime(obs.created_at)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-ink2-muted">
+                      Logged {formatDateTime(obs.created_at)}
+                    </span>
+                    <details className="relative">
+                      <summary className="cursor-pointer list-none rounded-md border border-line-strong bg-surface px-3 py-1.5 text-xs font-semibold text-ink2 hover:bg-canvas">
+                        Download ▾
+                      </summary>
+                      <div className="absolute right-0 z-20 mt-1 w-40 rounded-lg border border-line bg-surface p-1.5 shadow-lg">
+                        <button type="button" disabled={!!exportingObservation} onClick={() => handleObservationExport(obs, 'pdf')} className="block w-full rounded-md px-2.5 py-2 text-left text-xs font-medium text-ink2 hover:bg-canvas disabled:opacity-50">
+                          {exportingObservation === `${obs.id}-pdf` ? 'Preparing PDF...' : 'Download PDF'}
+                        </button>
+                        <button type="button" disabled={!!exportingObservation} onClick={() => handleObservationExport(obs, 'excel')} className="block w-full rounded-md px-2.5 py-2 text-left text-xs font-medium text-ink2 hover:bg-canvas disabled:opacity-50">
+                          {exportingObservation === `${obs.id}-excel` ? 'Preparing Excel...' : 'Download Excel'}
+                        </button>
+                      </div>
+                    </details>
+                  </div>
                 </div>
 
                 <div className="mt-3 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">

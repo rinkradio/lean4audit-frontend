@@ -1,3 +1,4 @@
+
 import apiClient from "./apiClient";
 
 const downloadFile = async (
@@ -57,21 +58,60 @@ const downloadFile = async (
 };
 
 
+const buildExportUrl = (
+  auditId,
+  format,
+  options = {}
+) => {
+  const params = new URLSearchParams();
+
+  if (options.observationType) {
+    params.set(
+      "observation_type",
+      options.observationType
+    );
+  }
+
+  if (options.observationId) {
+    params.set(
+      "observation_id",
+      options.observationId
+    );
+  }
+
+  const query = params.toString();
+
+  return `/audits/${auditId}/export/${format}${
+    query ? `?${query}` : ""
+  }`;
+};
+
+
 export const exportAuditExcel = async (
-  auditId
+  auditId,
+  options = {}
 ) => {
   return downloadFile(
-    `/audits/${auditId}/export/excel`,
+    buildExportUrl(
+      auditId,
+      "excel",
+      options
+    ),
     `audit_${auditId}_report.xlsx`
   );
 };
 
 
 export const exportAuditPdf = async (
-  auditId
+  auditId,
+  options = {}
 ) => {
   return downloadFile(
-    `/audits/${auditId}/export/pdf`,
+    buildExportUrl(
+      auditId,
+      "pdf",
+      options
+    ),
     `audit_${auditId}_report.pdf`
   );
 };

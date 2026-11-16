@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 import { AuthProvider } from './context/AuthContext'
@@ -26,258 +27,164 @@ import ProfilePage from './pages/consultant/ProfilePage'
 import ZoneSelectPage from './pages/consultant/ZoneSelectPage'
 import AuditInfoPage from './pages/consultant/AuditInfoPage'
 import MyAuditsPage from './pages/consultant/MyAuditsPage'
+import ConsultantReportsPage from './pages/consultant/ConsultantReportsPage'
 import AuditWorkspacePage from './pages/consultant/AuditWorkspacePage'
 import ObservationFormPage from './pages/consultant/ObservationFormPage'
 import ObservationTypeSelectionPage from './pages/consultant/ObservationTypeSelectionPage'
 import GembaObservationFormPage from './pages/consultant/GembaObservationFormPage'
 import SafetyObservationFormPage from './pages/consultant/SafetyObservationFormPage'
 import ObservationEditPage from './pages/consultant/ObservationEditPage'
-import SettingsPage from "./pages/admin/SettingsPage";
+
+import SettingsPage from './pages/admin/SettingsPage'
 
 
 export default function App() {
   return (
     <BrowserRouter>
-
       <AuthProvider>
-
         <ToastProvider>
-
           <Routes>
 
-            {/* -------------------------------------------------
-                ROOT
-            ------------------------------------------------- */}
-
+            {/* ROOT */}
             <Route
               path="/"
-              element={
-                <Navigate
-                  to="/login"
-                  replace
-                />
-              }
+              element={<Navigate to="/login" replace />}
             />
 
-
-            {/* -------------------------------------------------
-                PUBLIC ROUTES
-            ------------------------------------------------- */}
-
-            <Route
-              element={
-                <PublicOnlyRoute />
-              }
-            >
-
+            {/* PUBLIC ROUTES */}
+            <Route element={<PublicOnlyRoute />}>
               <Route
                 path="/login"
                 element={<LoginPage />}
               />
-
             </Route>
 
-
-            {/* -------------------------------------------------
-                ADMIN ROUTES
-            ------------------------------------------------- */}
-
+            {/* ADMIN ROUTES */}
             <Route
               element={
-                <ProtectedRoute
-                  allowedRoles={['ADMIN']}
-                />
+                <ProtectedRoute allowedRoles={['ADMIN']} />
               }
             >
-
               <Route
                 path="/admin"
                 element={<AdminLayout />}
               >
-
-              <Route
-  index
-  element={
-    <AdminDashboardPage />
-  }
-/>
-
-
+                {/* ADMIN DASHBOARD */}
                 <Route
-                  path="consultants"
-                  element={
-                    <ConsultantsListPage />
-                  }
+                  index
+                  element={<AdminDashboardPage />}
                 />
 
+                {/* CONSULTANTS */}
+                <Route
+                  path="consultants"
+                  element={<ConsultantsListPage />}
+                />
 
                 <Route
                   path="consultants/:id"
-                  element={
-                    <ConsultantDetailPage />
-                  }
+                  element={<ConsultantDetailPage />}
                 />
 
-
+                {/* CLIENTS */}
                 <Route
                   path="clients"
                   element={
-                    <SectionPlaceholder
-                      title="Clients"
-                    />
+                    <SectionPlaceholder title="Clients" />
                   }
                 />
 
-
-                {/* -------------------------------------------------
-                    PLANTS
-                ------------------------------------------------- */}
-
+                {/* PLANTS */}
                 <Route
                   path="plants"
-                  element={
-                    <PlantsPage />
-                  }
+                  element={<PlantsPage />}
                 />
 
-
-                {/* -------------------------------------------------
-                    ZONES
-                ------------------------------------------------- */}
-
+                {/* ZONES */}
                 <Route
                   path="zones"
-                  element={
-                    <ZonesPage />
-                  }
+                  element={<ZonesPage />}
                 />
 
-
-                {/* -------------------------------------------------
-                    AUDITS
-                ------------------------------------------------- */}
-
+                {/* AUDITS */}
                 <Route
                   path="audits"
-                  element={
-                    <AdminAuditsPage />
-                  }
+                  element={<AdminAuditsPage />}
                 />
-
 
                 <Route
                   path="audits/:auditId"
-                  element={
-                    <AuditDetailPage />
-                  }
+                  element={<AuditDetailPage />}
                 />
 
-
-                {/* -------------------------------------------------
-                    REPORTS
-                ------------------------------------------------- */}
-
+                {/* ADMIN REPORTS */}
                 <Route
-  path="reports"
-  element={
-    <AdminReportsPage />
-  }
-/>
+                  path="reports"
+                  element={<AdminReportsPage />}
+                />
 
-
-                {/* -------------------------------------------------
-                    SETTINGS
-                ------------------------------------------------- */}
-
+                {/* SETTINGS */}
                 <Route
-  path="settings"
-  element={
-    <SettingsPage />
-  }
-/>
-
+                  path="settings"
+                  element={<SettingsPage />}
+                />
               </Route>
-
             </Route>
 
-
-            {/* -------------------------------------------------
-                CONSULTANT ROUTES
-            ------------------------------------------------- */}
-
+            {/* CONSULTANT ROUTES */}
             <Route
               element={
-                <ProtectedRoute
-                  allowedRoles={['SUB_ADMIN']}
-                />
+                <ProtectedRoute allowedRoles={['SUB_ADMIN']} />
               }
             >
-
               <Route
                 path="/consultant"
                 element={<ConsultantLayout />}
               >
 
-                {/* Consultant Dashboard */}
-
+                {/* CONSULTANT DASHBOARD */}
                 <Route
                   index
                   element={<ConsultantPage />}
                 />
 
-
-                {/* Profile */}
-
+                {/* PROFILE */}
                 <Route
                   path="profile"
                   element={<ProfilePage />}
                 />
 
-
-                {/* -------------------------------------------------
-                    MY AUDITS
-                ------------------------------------------------- */}
-
+                {/* MY AUDITS */}
                 <Route
                   path="audits"
                   element={<MyAuditsPage />}
                 />
 
+                {/* CONSULTANT REPORTS */}
+                <Route
+                  path="reports"
+                  element={<ConsultantReportsPage />}
+                />
 
-                {/* -------------------------------------------------
-                    START NEW AUDIT
-                ------------------------------------------------- */}
-
+                {/* START NEW AUDIT */}
                 <Route
                   path="audits/new"
                   element={<ZoneSelectPage />}
                 />
 
-
-                {/* -------------------------------------------------
-                    AUDIT INFORMATION
-                ------------------------------------------------- */}
-
+                {/* AUDIT INFORMATION */}
                 <Route
                   path="audits/new/details"
                   element={<AuditInfoPage />}
                 />
 
-
-                {/* -------------------------------------------------
-                    AUDIT WORKSPACE
-                ------------------------------------------------- */}
-
+                {/* AUDIT WORKSPACE */}
                 <Route
                   path="audits/:auditId"
                   element={<AuditWorkspacePage />}
                 />
 
-
-                {/* -------------------------------------------------
-                    ADD OBSERVATION
-                ------------------------------------------------- */}
-
+                {/* ADD OBSERVATION */}
                 <Route
                   path="audits/:auditId/observations/new"
                   element={<ObservationTypeSelectionPage />}
@@ -298,36 +205,24 @@ export default function App() {
                   element={<SafetyObservationFormPage />}
                 />
 
-
-                {/* -------------------------------------------------
-                    EDIT OBSERVATION
-                ------------------------------------------------- */}
-
+                {/* EDIT OBSERVATION */}
                 <Route
                   path="audits/:auditId/observations/:observationId/edit"
                   element={<ObservationEditPage />}
                 />
 
               </Route>
-
             </Route>
 
-
-            {/* -------------------------------------------------
-                404
-            ------------------------------------------------- */}
-
+            {/* 404 */}
             <Route
               path="*"
               element={<NotFoundPage />}
             />
 
           </Routes>
-
         </ToastProvider>
-
       </AuthProvider>
-
     </BrowserRouter>
   )
 }
