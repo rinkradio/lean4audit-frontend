@@ -231,6 +231,87 @@ function AccessList({ items = [], emptyText = 'None' }) {
   )
 }
 
+// Compact desktop zone display. The complete zone list remains available
+// through the expandable count, without increasing the table row height.
+function ZoneAccessList({ items = [], emptyText = 'No Zones', visibleCount = 2 }) {
+  const [isOpen, setIsOpen] = useState(false)
+
+  if (!items?.length) {
+    return (
+      <span className="text-[11px] font-medium text-[#8b99a2]">
+        {emptyText}
+      </span>
+    )
+  }
+
+  const visibleItems = items.slice(0, visibleCount)
+  const remainingCount = Math.max(0, items.length - visibleCount)
+
+  return (
+    <div className="relative min-w-0 flex-1">
+      <div className="flex max-w-full flex-wrap items-center gap-1">
+        {visibleItems.map((item) => (
+          <AccessBadge key={item.id}>
+            {item.name}
+            {item.code ? ` (${item.code})` : ''}
+          </AccessBadge>
+        ))}
+
+        {remainingCount > 0 && (
+          <button
+            type="button"
+            aria-expanded={isOpen}
+            onClick={() => setIsOpen((current) => !current)}
+            className="inline-flex shrink-0 items-center rounded-md border border-[#cbdde8] bg-[#eaf3f8] px-2 py-1 text-[10px] font-bold leading-4 text-[#2d6688] transition hover:bg-[#dcecf5] focus:outline-none focus:ring-2 focus:ring-[#b9d5e6]"
+          >
+            +{remainingCount} more
+          </button>
+        )}
+      </div>
+
+      {isOpen && remainingCount > 0 && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#173042]/25 p-4"
+          role="presentation"
+          onClick={() => setIsOpen(false)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-label="All assigned zones"
+            className="w-full max-w-md rounded-xl border border-[#d9e5ec] bg-white p-4 shadow-[0_16px_44px_rgba(25,55,72,0.22)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between border-b border-[#edf1f4] pb-3">
+              <div>
+                <h3 className="text-[13px] font-bold text-[#29485d]">All assigned zones</h3>
+                <p className="mt-0.5 text-[10px] text-[#81929d]">{items.length} zones assigned</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-[#647b89] hover:bg-[#f2f6f8]"
+              >
+                Close
+              </button>
+            </div>
+            <div className="max-h-[60vh] overflow-y-auto pr-1">
+              <div className="flex flex-wrap gap-1.5">
+                {items.map((item) => (
+                  <AccessBadge key={item.id}>
+                    {item.name}
+                    {item.code ? ` (${item.code})` : ''}
+                  </AccessBadge>
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ---------------------------------------------------------
 // CONSULTANT AVATAR
 // ---------------------------------------------------------
@@ -1069,11 +1150,10 @@ export default function ConsultantsListPage() {
                               <ZoneIcon />
                             </div>
 
-                            <AccessList
-                              items={
-                                consultant.zones || []
-                              }
+                            <ZoneAccessList
+                              items={consultant.zones || []}
                               emptyText="No Zones"
+                              visibleCount={2}
                             />
 
                           </div>
