@@ -51,7 +51,11 @@ const buildExportUrl = (auditId, format, options = {}) => {
     params.set("observation_id", options.observationId);
   }
 
-  if (Array.isArray(options.selectedObservationIds)) {
+  // Selected observation IDs for Excel export
+  if (
+    format === "excel" &&
+    Array.isArray(options.selectedObservationIds)
+  ) {
     options.selectedObservationIds.forEach((id) => {
       params.append("selected_observation_ids", id);
     });
@@ -66,6 +70,7 @@ const buildExportUrl = (auditId, format, options = {}) => {
 
 export const previewAuditExcel = async (auditId, options = {}) => {
   const url = buildExportUrl(auditId, "preview", options);
+
   const response = await apiClient.get(url);
 
   return response.data;

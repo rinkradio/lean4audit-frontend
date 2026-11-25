@@ -603,6 +603,11 @@ export default function AdminReportsPage() {
   const [loadingObservationTypes, setLoadingObservationTypes] =
     useState(null);
 
+  const [selectionAudit, setSelectionAudit] = useState(null);
+  const [selectionObservations, setSelectionObservations] = useState([]);
+  const [selectedObservationIds, setSelectedObservationIds] = useState([]);
+  const [loadingSelection, setLoadingSelection] = useState(false);
+
   // ==========================================================
   // LOAD DATA
   // ==========================================================
@@ -1085,7 +1090,10 @@ export default function AdminReportsPage() {
   // ==========================================================
 
   async function exportAudit(auditId, type, options = {}) {
-    const key = `${auditId}-${type}-${options.observationType || options.observationId || "all"}`;
+    const selectionKey = options.selectedObservationIds?.length
+      ? `selected-${options.selectedObservationIds.length}`
+      : "all";
+    const key = `${auditId}-${type}-${options.observationType || options.observationId || selectionKey}`;
 
     try {
       setExporting(key);
@@ -1101,6 +1109,60 @@ export default function AdminReportsPage() {
     } finally {
       setExporting(null);
     }
+  }
+
+  async function openObservationSelector(audit) {
+    setSelectionAudit(audit);
+    setSelectionObservations([]);
+    setSelectedObservationIds([]);
+    setLoadingSelection(true);
+
+    try {
+      let page = 1;
+      let items = [];
+      let total = 0;
+
+      do {
+        const response = await apiClient.get(
+          `/audits/${audit.id}/observations`,
+          { params: { page, page_size: 100 } }
+        );
+
+        const pageItems = response.data?.items || [];
+        items = items.concat(pageItems);
+        total = Number(response.data?.total || 0);
+        page += 1;
+
+        if (!pageItems.length) break;
+      } while (items.length < total);
+
+      setSelectionObservations(items);
+    } catch (err) {
+      console.error("Unable to load observations for selection:", err);
+      window.alert("Unable to load all observations for this audit.");
+      setSelectionAudit(null);
+    } finally {
+      setLoadingSelection(false);
+    }
+  }
+
+  function toggleSelectedObservation(observationId) {
+    setSelectedObservationIds((current) =>
+      current.includes(observationId)
+        ? current.filter((id) => id !== observationId)
+        : [...current, observationId]
+    );
+  }
+
+  function exportSelectedObservations() {
+    if (!selectionAudit || selectedObservationIds.length === 0) {
+      window.alert("Select at least one observation first.");
+      return;
+    }
+
+    exportAudit(selectionAudit.id, "excel", {
+      selectedObservationIds,
+    });
   }
 
   async function toggleAuditDownload(auditId) {
@@ -2376,6 +2438,16 @@ export default function AdminReportsPage() {
                                   Download All (Excel)
                                 </button>
 
+                                <button
+                                  type="button"
+                                  disabled={!!exporting || loadingSelection}
+                                  onClick={() => openObservationSelector(audit)}
+                                  className="mt-1 flex w-full items-center justify-between rounded-lg border border-[#dce7ed] bg-[#f4f8fa] px-2.5 py-2 text-left text-[10px] font-bold text-[#315f79] hover:bg-[#eaf2f6] disabled:opacity-50"
+                                >
+                                  Select Observations…
+                                  <span aria-hidden="true">›</span>
+                                </button>
+
                                 <div className="my-1 border-t border-[#edf1f3]" />
                                 <div className="px-2 py-1.5 text-[9px] font-bold uppercase tracking-wider text-[#8999a2]">
                                   By Observation Type
@@ -2415,6 +2487,144 @@ export default function AdminReportsPage() {
           )}
 
         </section>
+
+        {/* ====================================================
+            SELECT OBSERVATIONS EXPORT MODAL
+        ==================================================== */}
+        {selectionAudit && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#152b3a]/45 p-3 sm:p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="observation-export-title"
+          >
+            <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-[#dce5e9] bg-white shadow-2xl">
+              <div className="flex items-start justify-between gap-4 border-b border-[#e5ebef] px-5 py-4">
+                <div>
+                  <h2 id="observation-export-title" className="text-[14px] font-bold text-[#293f4e]">
+                    Select Observations
+                  </h2>
+                  <p className="mt-1 text-[10px] text-[#8797a0]">
+                    {selectionAudit.audit_number || "Audit"} · Choose exactly which records to export.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectionAudit(null)}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#dce5e9] text-[#6f828d] hover:bg-[#f4f8fa]"
+                  aria-label="Close selection"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf1f3] bg-[#f8fafb] px-5 py-3">
+                <label className="flex items-center gap-2 text-[10px] font-bold text-[#526875]">
+                  <input
+                    type="checkbox"
+                    checked={selectionObservations.length > 0 && selectedObservationIds.length === selectionObservations.length}
+                    onChange={(event) =>
+                      setSelectedObservationIds(
+                        event.target.checked
+                          ? selectionObservations.map((item) => item.id)
+                          : []
+                      )
+                    }
+                    disabled={loadingSelection || selectionObservations.length === 0}
+                    className="h-4 w-4 accent-[#315f79]"
+                  />
+                  Select all ({selectionObservations.length})
+                </label>
+                <span className="text-[10px] font-semibold text-[#315f79]">
+                  {selectedObservationIds.length} selected
+                </span>
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
+                {loadingSelection ? (
+                  <div className="py-12 text-center text-[11px] text-[#8797a0]">
+                    Loading all observations…
+                  </div>
+                ) : selectionObservations.length === 0 ? (
+                  <div className="py-12 text-center text-[11px] text-[#8797a0]">
+                    This audit has no observations.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {selectionObservations.map((observation, index) => {
+                      const observationId = observation.id;
+                      const type = String(observation.observation_type || "5S").toUpperCase();
+                      const title =
+                        observation.title ||
+                        observation.description ||
+                        observation.observation_number ||
+                        `Observation ${index + 1}`;
+
+                      return (
+                        <label
+                          key={observationId}
+                          className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 transition ${
+                            selectedObservationIds.includes(observationId)
+                              ? "border-[#9bbdce] bg-[#f0f7fa]"
+                              : "border-[#e2e9ed] bg-white hover:bg-[#fafcfd]"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedObservationIds.includes(observationId)}
+                            onChange={() => toggleSelectedObservation(observationId)}
+                            className="mt-0.5 h-4 w-4 shrink-0 accent-[#315f79]"
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex flex-wrap items-center gap-2">
+                              <span className="text-[10px] font-bold text-[#315f79]">
+                                {observation.observation_number || `OBS-${index + 1}`}
+                              </span>
+                              <span className="rounded-full bg-[#e9f0f4] px-2 py-0.5 text-[8px] font-bold uppercase text-[#58717f]">
+                                {type === "GEMBA" ? "Gemba" : type === "SAFETY" ? "Safety" : type}
+                              </span>
+                            </span>
+                            <span className="mt-1 block break-words text-[11px] font-semibold text-[#405764]">
+                              {title}
+                            </span>
+                            {observation.severity && (
+                              <span className="mt-1 block text-[9px] text-[#8998a1]">
+                                Severity: {observation.severity}
+                              </span>
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2 border-t border-[#e5ebef] bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-[9px] leading-4 text-[#8797a0]">
+                  Selected-observation export is currently supported in Excel. Use the existing PDF options for full or type-based reports.
+                </p>
+                <div className="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectionAudit(null)}
+                    className="h-9 rounded-lg border border-[#d5e0e6] px-3 text-[10px] font-bold text-[#607480] hover:bg-[#f6f9fa]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!!exporting || loadingSelection || selectedObservationIds.length === 0}
+                    onClick={exportSelectedObservations}
+                    className="h-9 rounded-lg bg-[#28784d] px-3 text-[10px] font-bold text-white hover:bg-[#216640] disabled:opacity-50"
+                  >
+                    Excel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ====================================================
             QUICK ACCESS
